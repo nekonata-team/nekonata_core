@@ -83,6 +83,7 @@ class LocationForegroundService : Service() {
         else {
             startForeground(1, createNotification())
         }
+
         requestLocationUpdates()
 
         return START_STICKY

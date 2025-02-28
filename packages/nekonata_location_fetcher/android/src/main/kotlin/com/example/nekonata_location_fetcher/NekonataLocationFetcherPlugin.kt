@@ -2,6 +2,9 @@ package com.example.nekonata_location_fetcher
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -87,8 +90,15 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun start() {
-    val intent = Intent(context, LocationForegroundService::class.java)
-    context.startForegroundService(intent)
+    if (checkLocationPermission()) {
+      val intent = Intent(context, LocationForegroundService::class.java)
+      context.startForegroundService(intent)
+    } else {
+      Log.w("NekonataLocationFetcherPlugin", "Location permission is not granted. Cannot start service.")
+    }
+
+    // Set activated to true even if the location permission is not granted
+    // Due to on restarted, the service will be try restart
     Store.isActivated = true
   }
 
@@ -96,5 +106,11 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
     val intent = Intent(context, LocationForegroundService::class.java)
     context.stopService(intent)
     Store.isActivated = false
+  }
+
+  private fun checkLocationPermission(): Boolean {
+    val fineLocation = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    val coarseLocation = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    return fineLocation || coarseLocation
   }
 }
