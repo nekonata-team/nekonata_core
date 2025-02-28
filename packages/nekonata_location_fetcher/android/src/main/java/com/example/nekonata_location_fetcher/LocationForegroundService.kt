@@ -1,8 +1,10 @@
 package com.example.nekonata_location_fetcher
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -56,6 +58,8 @@ class LocationForegroundService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation
+                val battery = getBattery()
+
                 if (location != null) {
                     channel.invokeMethod(
                         "callback", mapOf(
@@ -63,7 +67,9 @@ class LocationForegroundService : Service() {
                             "latitude" to location.latitude,
                             "longitude" to location.longitude,
                             "speed" to location.speed,
-                            "timestamp" to location.time.toDouble()
+                            "timestamp" to location.time.toDouble(),
+                            "bearing" to location.bearing,
+                            "battery" to battery,
                         )
                     )
                 }
@@ -100,6 +106,12 @@ class LocationForegroundService : Service() {
             .setContentText(Store.notificationText ?: "Getting location updates...")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .build()
+    }
+
+    private fun getBattery(): Int {
+        val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        val batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        return batteryLevel
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

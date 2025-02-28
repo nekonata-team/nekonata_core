@@ -18,7 +18,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
     registrar.addMethodCallDelegate(instance, channel: channel)
 
     registrar.addApplicationDelegate(instance)
-    debugPrint("Registered")
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -119,6 +118,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
       start()
     }
 
+    UIDevice.current.isBatteryMonitoringEnabled = true
+
     return true
   }
 
@@ -126,12 +127,18 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
     _ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]
   ) {
     guard let location = locations.last else { return }
+
+    let batteryLevel = UIDevice.current.batteryLevel
+    let battery = batteryLevel >= 0 ? Int(batteryLevel * 100) : -1
+
     let json: [String: Any] = [
       "rawHandle": UserDefaults.standard.integer(forKey: "rawHandle"),
       "latitude": location.coordinate.latitude,
       "longitude": location.coordinate.longitude,
       "speed": location.speed,
-      "timestamp": location.timestamp.timeIntervalSince1970,
+      "timestamp": location.timestamp.timeIntervalSince1970 * 1000,  // convert to milliseconds
+      "bearing": location.course,
+      "battery": battery,
     ]
     channel?.invokeMethod("callback", arguments: json)
   }
