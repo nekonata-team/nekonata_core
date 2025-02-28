@@ -2,6 +2,7 @@ import 'package:nekonata_location_fetcher/model.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+/// The interface of `nekonata_location_fetcher`.
 abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
   /// Constructs a NekonataLocationFetcherPlatform.
   NekonataLocationFetcherPlatform() : super(token: _token);
@@ -24,18 +25,27 @@ abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  /// Starts fetching location data.
+  ///
+  /// Location service is monotonic,
+  /// so calling this method multiple times will not have any effect.
   Future<void> start() async {
     throw UnimplementedError('start() has not been implemented.');
   }
 
+  /// Stops fetching location data.
   Future<void> stop() async {
     throw UnimplementedError('stop() has not been implemented.');
   }
 
+  /// Sets a callback that will be called when a new location is fetched.
+  ///
+  /// Callback must be a top-level and **@pragma('vm:entry-point')** function.
   Future<void> setCallback(void Function(Location location) callback) async {
     throw UnimplementedError('setCallback() has not been implemented.');
   }
 
+  /// Returns whether the location fetcher is activated.
   Future<bool> get isActivated async {
     throw UnimplementedError('isStarted has not been implemented.');
   }

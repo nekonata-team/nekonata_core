@@ -1,6 +1,9 @@
 import 'package:nekonata_location_fetcher/model.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_platform_interface.dart';
 
+/// A base class for [NekonataLocationFetcher].
+///
+/// To mock the service, replace the instance of [NekonataLocationFetcherPlatform].
 class NekonataLocationFetcher extends NekonataLocationFetcherPlatform {
   NekonataLocationFetcherPlatform get _platform =>
       NekonataLocationFetcherPlatform.instance;
