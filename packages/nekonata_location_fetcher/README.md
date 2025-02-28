@@ -1,6 +1,8 @@
 # nekonata_location_fetcher
 
-A new Flutter plugin project.
+Wrapper of `CLLocationManager` and `FusedLocationProviderClient`
+
+This can fetch location data even if app was killed.
 
 ## Getting Started
 
@@ -22,6 +24,31 @@ Check example app.
     - (Optional) **Notification** for Android Foreground Service Notification
 2. Call setCallback
 3. Call start
+
+```dart
+import 'package:nekonata_location_fetcher/model.dart';
+import 'package:nekonata_location_fetcher/nekonata_location_fetcher.dart';
+
+@pragma('vm:entry-point')
+void _callback(Location location) {
+  SharedPreferences.getInstance().then((prefs) {
+    final locations = prefs.getStringList('locations') ?? [];
+    locations.add(location.toString());
+    prefs.setStringList('locations', locations);
+    debugPrint('Location was updated');
+  });
+}
+
+final fetcher = NekonataLocationFetcher();
+
+fetcher.setCallback(_callback);
+
+fetcher.start();
+
+fetcher.isActivated;
+
+fetcher.stop();
+```
 
 ## Setup
 
@@ -74,3 +101,7 @@ import nekonata_location_fetcher // here
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 ```
+
+### Limitation
+
+- minSdk is **Android 26**
