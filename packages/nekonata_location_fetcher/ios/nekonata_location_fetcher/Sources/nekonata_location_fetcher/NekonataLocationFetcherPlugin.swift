@@ -32,6 +32,9 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
       }
 
       result(nil)
+    case "setAndroidNotification":
+      debugPrint("setAndroidNotification is ignored on iOS")
+      result(nil)
     case "start":
       start()
       result(nil)

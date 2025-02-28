@@ -27,6 +27,14 @@ class MockNekonataLocationFetcherPlatform
   Future<bool> get isActivated async {
     return false;
   }
+
+  @override
+  Future<void> setAndroidNotification({
+    required String? title,
+    required String? text,
+  }) {
+    return Future.value();
+  }
 }
 
 void main() {

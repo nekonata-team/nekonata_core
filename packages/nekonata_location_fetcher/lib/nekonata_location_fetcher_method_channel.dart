@@ -64,4 +64,15 @@ class MethodChannelNekonataLocationFetcher
   Future<bool> get isActivated async {
     return await methodChannel.invokeMethod<bool>('isActivated') ?? false;
   }
+
+  @override
+  Future<void> setAndroidNotification({
+    required String? title,
+    required String? text,
+  }) async {
+    await methodChannel.invokeMethod<void>('setAndroidNotification', {
+      'title': title,
+      'text': text,
+    });
+  }
 }

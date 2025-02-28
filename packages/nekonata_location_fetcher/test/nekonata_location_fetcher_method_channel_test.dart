@@ -15,6 +15,7 @@ void main() {
             'start' => null,
             'stop' => null,
             'setCallback' => null,
+            'setAndroidNotification' => null,
             'isActivated' => false,
             _ => throw UnimplementedError(),
           };

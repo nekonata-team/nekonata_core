@@ -40,6 +40,10 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
           result.error("error", e.message, null)
         }
       }
+      "setAndroidNotification" -> {
+        setAndroidNotification(call)
+        result.success(null)
+      }
       "start" -> {
         start()
         result.success(null)
@@ -72,6 +76,14 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
 
     Store.dispatcherRawHandle = dispatcherHandle
     Store.rawHandle = handle
+  }
+
+  private fun setAndroidNotification(call: MethodCall) {
+    val title = call.argument<String>("title")
+    val text = call.argument<String>("text")
+
+    Store.notificationTitle = title
+    Store.notificationText = text
   }
 
   private fun start() {

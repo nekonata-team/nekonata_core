@@ -8,6 +8,8 @@ object Store {
     private const val KEY_RAW_HANDLE = "rawHandle"
     private const val KEY_DISPATCHER_RAW_HANDLE = "dispatcherRawHandle"
     private const val KEY_IS_ACTIVATED = "isActivated"
+    private const val KEY_NOTIFICATION_TITLE = "notificationTitle"
+    private const val KEY_NOTIFICATION_TEXT = "notificationText"
 
     private lateinit var preferences: SharedPreferences
 
@@ -26,4 +28,12 @@ object Store {
     var isActivated: Boolean
         get() = preferences.getBoolean(KEY_IS_ACTIVATED, false)
         set(value) = preferences.edit().putBoolean(KEY_IS_ACTIVATED, value).apply()
+
+    var notificationTitle: String?
+        get() = preferences.getString(KEY_NOTIFICATION_TITLE, null)
+        set(value) = preferences.edit().putString(KEY_NOTIFICATION_TITLE, value).apply()
+
+    var notificationText: String?
+        get() = preferences.getString(KEY_NOTIFICATION_TEXT, null)
+        set(value) = preferences.edit().putString(KEY_NOTIFICATION_TEXT, value).apply()
 }

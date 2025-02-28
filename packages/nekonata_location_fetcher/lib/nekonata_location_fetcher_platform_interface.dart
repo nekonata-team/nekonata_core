@@ -47,6 +47,16 @@ abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
 
   /// Returns whether the location fetcher is activated.
   Future<bool> get isActivated async {
-    throw UnimplementedError('isStarted has not been implemented.');
+    throw UnimplementedError('isActivated has not been implemented.');
+  }
+
+  /// Sets an Android notification.
+  Future<void> setAndroidNotification({
+    required String? title,
+    required String? text,
+  }) async {
+    throw UnimplementedError(
+      'setAndroidNotification() has not been implemented.',
+    );
   }
 }
