@@ -5,23 +5,28 @@ import 'package:nekonata_location_fetcher/nekonata_location_fetcher_method_chann
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelNekonataLocationFetcher platform = MethodChannelNekonataLocationFetcher();
-  const MethodChannel channel = MethodChannel('nekonata_location_fetcher');
+  final platform = MethodChannelNekonataLocationFetcher();
+  const channel = MethodChannel('nekonata_location_fetcher');
 
   setUp(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      channel,
-      (MethodCall methodCall) async {
-        return '42';
-      },
-    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+          return switch (methodCall.method) {
+            'start' => null,
+            'stop' => null,
+            'setCallback' => null,
+            'isActivated' => false,
+            _ => throw UnimplementedError(),
+          };
+        });
   });
 
   tearDown(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
   });
 
-  test('getPlatformVersion', () async {
-    expect(await platform.getPlatformVersion(), '42');
+  test('example', () async {
+    expect(await platform.isActivated, false);
   });
 }
