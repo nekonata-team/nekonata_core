@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:nekonata_location_fetcher/model.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher.dart';
@@ -57,16 +59,34 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (Platform.isAndroid)
+              ElevatedButton(
+                onPressed: () async {
+                  final status = await Permission.notification.request();
+                  if (status.isGranted) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Permission granted')),
+                      );
+                    }
+                  }
+                },
+                child: Text('Request Notification Permission'),
+              ),
             ElevatedButton(
               onPressed: () async {
                 final status = await Permission.location.request();
                 final statusAlways = await Permission.locationAlways.request();
 
                 if (status.isGranted && statusAlways.isGranted) {
-                  debugPrint('Permission granted');
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Permission granted')),
+                    );
+                  }
                 }
               },
-              child: const Text('Request Permission'),
+              child: const Text('Request Location Permission'),
             ),
             ElevatedButton(
               onPressed: () async {
