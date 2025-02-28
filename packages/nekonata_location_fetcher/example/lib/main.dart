@@ -59,6 +59,16 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            FutureBuilder(
+              future: fetcher.isActivated,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                }
+                final isActivated = snapshot.data;
+                return Text('Activated: $isActivated');
+              },
+            ),
             if (Platform.isAndroid)
               ElevatedButton(
                 onPressed: () async {

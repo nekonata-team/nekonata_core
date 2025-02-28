@@ -35,4 +35,8 @@ abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
   Future<void> setCallback(void Function(Location location) callback) async {
     throw UnimplementedError('setCallback() has not been implemented.');
   }
+
+  Future<bool> get isActivated async {
+    throw UnimplementedError('isStarted has not been implemented.');
+  }
 }

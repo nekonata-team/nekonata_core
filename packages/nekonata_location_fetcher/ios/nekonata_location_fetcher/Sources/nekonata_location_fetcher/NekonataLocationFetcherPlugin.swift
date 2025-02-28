@@ -38,6 +38,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
     case "stop":
       stop()
       result(nil)
+    case "isActivated":
+      result(Store.isActivated)
     default:
       result(FlutterMethodNotImplemented)
     }

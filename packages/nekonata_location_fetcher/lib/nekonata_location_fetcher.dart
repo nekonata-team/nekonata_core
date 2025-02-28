@@ -14,4 +14,7 @@ class NekonataLocationFetcher extends NekonataLocationFetcherPlatform {
   @override
   Future<void> setCallback(void Function(Location location) callback) =>
       _platform.setCallback(callback);
+
+  @override
+  Future<bool> get isActivated async => _platform.isActivated;
 }

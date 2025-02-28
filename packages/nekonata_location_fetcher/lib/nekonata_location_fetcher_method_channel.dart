@@ -59,4 +59,9 @@ class MethodChannelNekonataLocationFetcher
       'rawHandle': handle!.toRawHandle(),
     });
   }
+
+  @override
+  Future<bool> get isActivated async {
+    return await methodChannel.invokeMethod<bool>('isActivated') ?? false;
+  }
 }

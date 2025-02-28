@@ -48,6 +48,9 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
         stop()
         result.success(null)
       }
+      "isActivated" -> {
+        result.success(Store.isActivated)
+      }
       else -> {
         result.notImplemented()
       }
