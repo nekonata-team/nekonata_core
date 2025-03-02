@@ -1,0 +1,163 @@
+import Flutter
+import MapKit
+import UIKit
+
+class NekonataMapViewFactory: NSObject, FlutterPlatformViewFactory {
+    private var messenger: FlutterBinaryMessenger
+
+    init(messenger: FlutterBinaryMessenger) {
+        self.messenger = messenger
+        super.init()
+    }
+
+    func create(
+        withFrame frame: CGRect,
+        viewIdentifier viewId: Int64,
+        arguments args: Any?
+    ) -> FlutterPlatformView {
+        return NekonataMapView(
+            frame: frame,
+            viewIdentifier: viewId,
+            arguments: args,
+            binaryMessenger: messenger)
+    }
+
+    /// Implementing this method is only necessary when the `arguments` in `createWithFrame` is not `nil`.
+    public func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+        return FlutterStandardMessageCodec.sharedInstance()
+    }
+}
+
+class NekonataMapView: NSObject, FlutterPlatformView {
+    private var map: MKMapView
+    private var channel: FlutterMethodChannel
+
+    init(
+        frame: CGRect,
+        viewIdentifier viewId: Int64,
+        arguments args: Any?,
+        binaryMessenger messenger: FlutterBinaryMessenger?
+    ) {
+        map = MKMapView(frame: frame)
+        channel = FlutterMethodChannel(name: "nekonata_map_\(viewId)", binaryMessenger: messenger!)
+
+        super.init()
+
+        map.delegate = self
+        debugPrint(args)
+        if let dict = args as? [String: Any],
+            let latitude = dict["latitude"] as? CLLocationDegrees,
+            let longitude = dict["longitude"] as? CLLocationDegrees
+        {
+            let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            let region = MKCoordinateRegion(
+                center: coordinate, latitudinalMeters: 1000, longitudinalMeters: 1000)
+            map.setRegion(region, animated: false)
+        }
+
+        channel.setMethodCallHandler(handle)
+    }
+
+    func view() -> UIView {
+        return map
+    }
+
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "addMarker":
+            do {
+                try addMarker(call)
+                result(nil)
+            } catch {
+                result(error)
+            }
+        case "removeMarker":
+            do {
+                try removeMarker(call)
+                result(nil)
+            } catch {
+                result(error)
+            }
+        case "updateMarker":
+            do {
+                try updateMarker(call)
+                result(nil)
+            } catch {
+                result(error)
+            }
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    func addMarker(_ call: FlutterMethodCall) throws {
+        guard let args = call.arguments as? [String: Any],
+            let id = args["id"] as? String,
+            let latitude = args["latitude"] as? Double,
+            let longitude = args["longitude"] as? Double
+        else {
+            throw NSError(domain: "Invalid arguments", code: 0, userInfo: nil)
+        }
+
+        let annotation = Annotation(id, latitude: latitude, longitude: longitude)
+        // [Platform-specific code | Flutter](https://docs.flutter.dev/platform-integration/platform-channels#codec)
+        annotation.image = (args["image"] as? FlutterStandardTypedData).map { value in value.data }
+        annotation.minWidth = args["minWidth"] as? CGFloat
+        annotation.minHeight = args["minHeight"] as? CGFloat
+
+        map.addAnnotation(annotation)
+    }
+
+    func removeMarker(_ call: FlutterMethodCall) throws {
+        guard let id = call.arguments as? String else {
+            throw NSError(domain: "Invalid arguments", code: 0, userInfo: nil)
+        }
+
+        if let annotation = annotation(withId: id) {
+            map.removeAnnotation(annotation)
+        }
+    }
+
+    func updateMarker(_ call: FlutterMethodCall) throws {
+        guard let args = call.arguments as? [String: Any],
+            let id = args["id"] as? String,
+            let latitude = args["latitude"] as? Double,
+            let longitude = args["longitude"] as? Double
+        else {
+            throw NSError(domain: "Invalid arguments", code: 0, userInfo: nil)
+        }
+
+        if let annotation = annotation(withId: id) {
+            let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            UIView.animate(withDuration: 0.25) {
+                annotation.coordinate = coordinate
+            }
+        }
+    }
+
+    func annotation(withId id: String) -> Annotation? {
+        return map.annotations.compactMap({ $0 as? Annotation }).first(where: { $0.id == id })
+    }
+}
+
+extension NekonataMapView: MKMapViewDelegate {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        guard let annotation = annotation as? Annotation else {
+            return nil
+        }
+
+        var view =
+            mapView.dequeueReusableAnnotationView(withIdentifier: annotation.id)
+            ?? FlutterWidgetAnnotationView(annotation: annotation, reuseIdentifier: annotation.id)
+
+        return view
+    }
+
+    func mapView(_ mapView: MKMapView, didSelect annotation: MKAnnotation) {
+        guard let annotation = annotation as? Annotation else {
+            return
+        }
+
+        channel.invokeMethod("onSelected", arguments: annotation.id)
+    }
+}

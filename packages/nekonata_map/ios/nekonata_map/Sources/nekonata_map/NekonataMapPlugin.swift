@@ -3,9 +3,8 @@ import UIKit
 
 public class NekonataMapPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "nekonata_map", binaryMessenger: registrar.messenger())
-    let instance = NekonataMapPlugin()
-    registrar.addMethodCallDelegate(instance, channel: channel)
+      let factory = NekonataMapViewFactory(messenger: registrar.messenger())
+      registrar.register(factory, withId: "nekonata_map")
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

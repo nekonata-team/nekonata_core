@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'dart:async';
+import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nekonata_map/nekonata_map.dart';
+import 'package:nekonata_map/map.dart';
+import 'package:nekonata_map/marker.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,48 +17,70 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _nekonataMapPlugin = NekonataMap();
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(home: const MapPage());
+  }
+}
+
+class MapPage extends StatefulWidget {
+  const MapPage({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
+  State<MapPage> createState() => _MapPageState();
+}
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await _nekonataMapPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
-  }
+class _MapPageState extends State<MapPage> {
+  late final NekonataMapController _controller;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
-        ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Nekonata Map')),
+      body: NekonataMap(
+        latitude: 35.681236,
+        longitude: 139.767125,
+        onControllerCreated: (controller) => _controller = controller,
       ),
+      persistentFooterButtons: [
+        IconButton(
+          onPressed: () async {
+            final image = await rootBundle
+                .load("assets/marker.png")
+                .then((value) => value.buffer.asUint8List());
+            _controller.addMarker(
+              MarkerData(
+                id: "1",
+                latitude: 35.681236,
+                longitude: 139.767125,
+                image: image,
+                minHeight: 40,
+              ),
+            );
+          },
+          icon: Icon(Icons.add),
+        ),
+        IconButton(
+          onPressed: () {
+            _controller.removeMarker("1");
+          },
+          icon: Icon(Icons.remove),
+        ),
+        IconButton(
+          onPressed: () {
+            final rnd = Random();
+            final latDelta = 0.01 * (rnd.nextDouble() - 0.5);
+            final lonDelta = 0.01 * (rnd.nextDouble() - 0.5);
+
+            _controller.updateMarker(
+              id: "1",
+              latitude: 35.681236 + latDelta,
+              longitude: 139.767125 + lonDelta,
+            );
+          },
+          icon: Icon(Icons.update),
+        ),
+      ],
     );
   }
 }
