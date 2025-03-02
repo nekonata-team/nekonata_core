@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nekonata_map/map.dart';
 import 'package:nekonata_map/marker.dart';
+import 'package:nekonata_map/nekonata_map.dart';
 
 void main() {
   runApp(const MyApp());
