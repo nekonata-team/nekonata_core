@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nekonata_map/marker.dart';
@@ -31,23 +33,35 @@ class _NekonataMapState extends State<NekonataMap> {
       "longitude": widget.longitude,
     };
 
-    return Stack(
-      children: [
-        UiKitView(
-          viewType: 'nekonata_map',
-          onPlatformViewCreated: (id) {
-            setState(() {
-              controller = NekonataMapController(
-                id,
-                onMarkerSelected: widget.onMarkerSelected,
-              );
-              widget.onControllerCreated?.call(controller!);
-            });
-          },
-          creationParams: creationParams,
-          creationParamsCodec: const StandardMessageCodec(),
-        ),
-      ],
+    if (Platform.isIOS) {
+      return UiKitView(
+        viewType: 'nekonata_map',
+        onPlatformViewCreated: (id) {
+          setState(() {
+            controller = NekonataMapController(
+              id,
+              onMarkerSelected: widget.onMarkerSelected,
+            );
+            widget.onControllerCreated?.call(controller!);
+          });
+        },
+        creationParams: creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+      );
+    }
+    return AndroidView(
+      viewType: 'nekonata_map',
+      onPlatformViewCreated: (id) {
+        setState(() {
+          controller = NekonataMapController(
+            id,
+            onMarkerSelected: widget.onMarkerSelected,
+          );
+          widget.onControllerCreated?.call(controller!);
+        });
+      },
+      creationParams: creationParams,
+      creationParamsCodec: const StandardMessageCodec(),
     );
   }
 }
