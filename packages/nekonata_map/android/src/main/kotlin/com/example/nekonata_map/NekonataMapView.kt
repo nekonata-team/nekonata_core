@@ -14,12 +14,11 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.platform.PlatformView
-import kotlin.math.max
+import pl.droidsonroids.gif.GifDrawable
 
 internal class NekonataMapView(
     private val context: Context,
@@ -28,10 +27,11 @@ internal class NekonataMapView(
     messenger: BinaryMessenger,
     private val lifecycleProvider: LifecycleProvider
 ) : PlatformView, OnMapReadyCallback, DefaultLifecycleObserver {
-    private val mapView = MapView(context)
     private lateinit var googleMap: GoogleMap
+
+    private val mapView = MapView(context)
     private var channel = MethodChannel(messenger, "nekonata_map_$id")
-    private val markers = mutableMapOf<String, Marker>()
+    private val container = MarkerContainer()
 
 
     init {
@@ -99,33 +99,45 @@ internal class NekonataMapView(
         val coordinate = LatLng(latitude, longitude)
         val markerOptions = MarkerOptions().position(coordinate)
 
+        val image = args["image"] as? ByteArray
+        val density = context.resources.displayMetrics.density
+        val minWidth = (args["minWidth"] as? Number)?.toInt()
+        val minHeight = (args["minHeight"] as? Number)?.toInt()
+        var animator: MarkerAnimator? = null
+
         // [Platform-specific code | Flutter](https://docs.flutter.dev/platform-integration/platform-channels#codec)
-        if (args["image"] != null) {
-            val imageData = args["image"] as ByteArray
-            var bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-
-            val density = context.resources.displayMetrics.density
-            val minWidth = (args["minWidth"] as? Number)?.toInt()
-            val minHeight = (args["minHeight"] as? Number)?.toInt()
-
-            bitmap = bitmap.resized(minWidth, minHeight, density)
+        if (image != null) {
+            val bitmap = BitmapFactory
+                .decodeByteArray(image, 0, image.size)
+                .resized(minWidth, minHeight, density)
 
             markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap))
         }
 
-        val marker = googleMap.addMarker(markerOptions)
-        marker?.tag = id
-        if (marker != null) {
-            markers[id] = marker
+        val marker = googleMap.addMarker(markerOptions)!!
+        marker.tag = id
+
+        if (image != null) {
+            if (isGifData(image)) {
+                val (frames, durations) = decodeGif(image)
+                animator = MarkerAnimator(
+                    marker,
+                    frames.map { it.resized(minWidth, minHeight, density) },
+                    durations
+                )
+            }
         }
+
+        container.add(id, marker, animator)
+
         // おそらくプラグイン側の問題でUIが更新されない
         // よって、ほんの少しだけzoomの値を書き換えて再描画する
         googleMap.moveCamera(CameraUpdateFactory.zoomBy(0.0001f))
     }
 
     private fun removeMarker(id: String) {
-        markers[id]?.remove()
-        markers.remove(id)
+        container.remove(id)
+
         // addMarkerと同様、ほんの少しだけzoomの値を書き換えて再描画する
         googleMap.moveCamera(CameraUpdateFactory.zoomBy(0.0001f))
     }
@@ -135,7 +147,7 @@ internal class NekonataMapView(
         val latitude = args["latitude"] as? Double ?: throw Exception("latitude is required")
         val longitude = args["longitude"] as? Double ?: throw Exception("longitude is required")
 
-        val marker = markers[id] ?: return
+        val marker = container.get(id) ?: return
         val start = marker.position
         val end = LatLng(latitude, longitude)
 
@@ -195,25 +207,38 @@ internal class NekonataMapView(
 
     override fun onDestroy(owner: LifecycleOwner) {
         mapView.onDestroy()
+        container.clear()
     }
 }
 
-fun Bitmap.resized(minWidth: Int? = null, minHeight: Int? = null, density: Float): Bitmap {
-    // 両方が指定されていなければそのまま返す
-    if (minWidth == null && minHeight == null) return this
+private fun isGifData(data: ByteArray): Boolean {
+    if (data.size < 6) return false
+    val header = data.copyOfRange(0, 6).toString(Charsets.US_ASCII)
+    return header == "GIF89a" || header == "GIF87a"
+}
 
-    val widthScale: Double = if (minWidth != null) minWidth.toDouble() / this.width else 0.0
-    val heightScale: Double = if (minHeight != null) minHeight.toDouble() / this.height else 0.0
+private fun decodeGif(data: ByteArray): Pair<List<Bitmap>, List<Long>> {
+    val gifDrawable = GifDrawable(data)
+    val frameCount = gifDrawable.numberOfFrames
 
-    // 両方指定の場合は、どちらか大きい方のスケールで調整
-    val scaleFactor = when {
-        minWidth != null && minHeight != null -> max(widthScale, heightScale)
-        minWidth != null -> widthScale
-        else -> heightScale
-    } * density  // dpからpxに直す。これによって、iOSと同様のサイズ感に近づけることができる
+    val frames = mutableListOf<Bitmap>()
+    val durations = mutableListOf<Long>()
 
-    val newWidth = (this.width * scaleFactor).toInt()
-    val newHeight = (this.height * scaleFactor).toInt()
+    for (i in 0 until frameCount) {
+        // 指定したフレームにシーク
+        gifDrawable.seekToFrame(i)
+        // 現在のフレームを Bitmap として取得
+        val frame = gifDrawable.currentFrame
+        // Bitmap をコピーして保持（内部バッファが再利用されるため）
+        frames.add(frame.copy(frame.config!!, true))
 
-    return Bitmap.createScaledBitmap(this, newWidth, newHeight, false)
+        // 各フレームの表示時間を取得（ミリ秒単位）
+        var duration = gifDrawable.getFrameDuration(i).toLong()
+        // 最小表示時間を 100ms に調整
+        if (duration < 100L) {
+            duration = 100L
+        }
+        durations.add(duration)
+    }
+    return Pair(frames, durations)
 }
