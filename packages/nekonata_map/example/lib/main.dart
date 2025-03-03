@@ -32,6 +32,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   late final NekonataMapController _controller;
+  final rnd = Random();
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +69,6 @@ class _MapPageState extends State<MapPage> {
         ),
         IconButton(
           onPressed: () {
-            final rnd = Random();
             final latDelta = 0.01 * (rnd.nextDouble() - 0.5);
             final lonDelta = 0.01 * (rnd.nextDouble() - 0.5);
 
@@ -79,6 +79,22 @@ class _MapPageState extends State<MapPage> {
             );
           },
           icon: Icon(Icons.update),
+        ),
+        IconButton(
+          onPressed: () {
+            final latDelta = 0.01 * (rnd.nextDouble() - 0.5);
+            final lonDelta = 0.01 * (rnd.nextDouble() - 0.5);
+            final zoom = rnd.nextDouble() * 18;
+            final heading = rnd.nextDouble() * 360;
+
+            _controller.moveCamera(
+              latitude: 35.681236 + latDelta,
+              longitude: 139.767125 + lonDelta,
+              zoom: zoom,
+              heading: heading,
+            );
+          },
+          icon: Icon(Icons.camera),
         ),
       ],
     );

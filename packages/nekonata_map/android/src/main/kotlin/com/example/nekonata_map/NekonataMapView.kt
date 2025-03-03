@@ -12,6 +12,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -61,6 +62,15 @@ internal class NekonataMapView(
                 "updateMarker" -> {
                     try {
                         updateMarker(call.arguments as Map<String, Any>)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("Error", e.message, null)
+                    }
+                }
+
+                "moveCamera" -> {
+                    try {
+                        moveCamera(call.arguments as Map<String, Any>)
                         result.success(null)
                     } catch (e: Exception) {
                         result.error("Error", e.message, null)
@@ -138,6 +148,24 @@ internal class NekonataMapView(
             marker.position = LatLng(lat, lng)
         }
         valueAnimator.start()
+    }
+
+    private fun moveCamera(args: Map<String, Any>) {
+        val latitude = args["latitude"] as? Double
+        val longitude = args["longitude"] as? Double
+        val heading = args["heading"] as? Double
+        val zoom = args["zoom"] as? Double
+
+        val current = googleMap.cameraPosition
+
+        val coordinate =
+            LatLng(latitude ?: current.target.latitude, longitude ?: current.target.longitude)
+        val position = CameraPosition.Builder()
+            .target(coordinate)
+            .zoom((zoom?.toFloat() ?: current.zoom))
+            .bearing(heading?.toFloat() ?: current.bearing)
+            .build()
+        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(position))
     }
 
 

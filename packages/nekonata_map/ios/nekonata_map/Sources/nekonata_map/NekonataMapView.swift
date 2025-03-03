@@ -85,6 +85,13 @@ class NekonataMapView: NSObject, FlutterPlatformView {
             } catch {
                 result(error)
             }
+        case "moveCamera":
+            do {
+                try moveCamera(call)
+                result(nil)
+            } catch {
+                result(error)
+            }
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -135,8 +142,37 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         }
     }
 
+    func moveCamera(_ call: FlutterMethodCall) throws {
+        guard let args = call.arguments as? [String: Any]
+        else {
+            throw NSError(domain: "Invalid arguments", code: 0, userInfo: nil)
+        }
+        
+        let current = map.camera
+        
+        let latitude = args["latitude"] as? Double ?? current.centerCoordinate.latitude
+        let longitude = args["longitude"] as? Double ?? current.centerCoordinate.longitude
+        
+        let zoom = args["zoom"] as? Double
+        let altitude = zoom.map(convertToAltitude) ?? current.altitude
+        
+        let heading = args["heading"] as? Double ?? current.heading
+
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let camera = MKMapCamera(lookingAtCenter: coordinate, fromDistance: altitude, pitch: 0, heading: heading)
+        map.setCamera(camera, animated: true)
+    }
+
     func annotation(withId id: String) -> Annotation? {
         return map.annotations.compactMap({ $0 as? Annotation }).first(where: { $0.id == id })
+    }
+    
+    func convertToAltitude(_ zoom: Double) -> Double {
+        // zoom 0 時の高度（この値は例示用です）
+        let altitudeAtZoom0 = 591657550.5
+        // 緯度による補正
+        let altitude = altitudeAtZoom0 / pow(2, zoom)
+        return altitude
     }
 }
 

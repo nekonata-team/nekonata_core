@@ -101,4 +101,18 @@ class NekonataMapController {
       'longitude': longitude,
     });
   }
+
+  void moveCamera({
+    double? latitude,
+    double? longitude,
+    double? zoom,
+    double? heading,
+  }) {
+    channel.invokeMethod('moveCamera', {
+      'latitude': latitude,
+      'longitude': longitude,
+      'zoom': zoom,
+      'heading': heading,
+    });
+  }
 }
