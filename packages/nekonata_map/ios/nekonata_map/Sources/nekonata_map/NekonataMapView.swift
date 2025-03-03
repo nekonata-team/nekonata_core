@@ -180,12 +180,16 @@ extension NekonataMapView: MKMapViewDelegate {
         guard let annotation = annotation as? Annotation else {
             return nil
         }
-
-        var view =
-            mapView.dequeueReusableAnnotationView(withIdentifier: annotation.id)
-            ?? FlutterWidgetAnnotationView(annotation: annotation, reuseIdentifier: annotation.id)
-
-        return view
+        
+        if let view = mapView.dequeueReusableAnnotationView(withIdentifier: annotation.id) {
+            return view
+        }
+        
+        if annotation.image != nil {
+            return ImageAnnotationView(annotation: annotation, reuseIdentifier: annotation.id)
+        } else {
+            return MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: annotation.id)
+        }
     }
 
     func mapView(_ mapView: MKMapView, didSelect annotation: MKAnnotation) {

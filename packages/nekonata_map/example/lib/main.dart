@@ -35,6 +35,52 @@ class _MapPageState extends State<MapPage> {
   final rnd = Random();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _addMarkers();
+    });
+  }
+
+  Future<void> _addMarkers() async {
+    final png = await rootBundle
+        .load("assets/marker.png")
+        .then((value) => value.buffer.asUint8List());
+
+    final gif = await rootBundle
+        .load("assets/marker.gif")
+        .then((value) => value.buffer.asUint8List());
+
+    _controller.addMarker(
+      MarkerData(id: "1", latitude: 35.680, longitude: 139.767125),
+    );
+    _controller.addMarker(
+      MarkerData(
+        id: "2",
+        latitude: 35.681236,
+        longitude: 139.767125,
+        image: png,
+        minHeight: 40,
+      ),
+    );
+    _controller.addMarker(
+      MarkerData(
+        id: "3",
+        latitude: 35.682,
+        longitude: 139.767125,
+        image: gif,
+        minHeight: 64,
+      ),
+    );
+  }
+
+  void _clearMarkers() {
+    _controller.removeMarker("1");
+    _controller.removeMarker("2");
+    _controller.removeMarker("3");
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Nekonata Map')),
@@ -44,29 +90,8 @@ class _MapPageState extends State<MapPage> {
         onControllerCreated: (controller) => _controller = controller,
       ),
       persistentFooterButtons: [
-        IconButton(
-          onPressed: () async {
-            final image = await rootBundle
-                .load("assets/marker.png")
-                .then((value) => value.buffer.asUint8List());
-            _controller.addMarker(
-              MarkerData(
-                id: "1",
-                latitude: 35.681236,
-                longitude: 139.767125,
-                image: image,
-                minHeight: 40,
-              ),
-            );
-          },
-          icon: Icon(Icons.add),
-        ),
-        IconButton(
-          onPressed: () {
-            _controller.removeMarker("1");
-          },
-          icon: Icon(Icons.remove),
-        ),
+        IconButton(onPressed: _addMarkers, icon: Icon(Icons.refresh)),
+        IconButton(onPressed: _clearMarkers, icon: Icon(Icons.clear)),
         IconButton(
           onPressed: () {
             final latDelta = 0.01 * (rnd.nextDouble() - 0.5);
