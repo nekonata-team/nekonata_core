@@ -44,7 +44,6 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         super.init()
 
         map.delegate = self
-        debugPrint(args)
         if let dict = args as? [String: Any],
             let latitude = dict["latitude"] as? CLLocationDegrees,
             let longitude = dict["longitude"] as? CLLocationDegrees

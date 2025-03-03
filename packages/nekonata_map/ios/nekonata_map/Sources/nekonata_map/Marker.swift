@@ -7,7 +7,7 @@ class Annotation: NSObject, MKAnnotation {
     var minWidth: CGFloat?
     var minHeight: CGFloat?
     var image: Data?
-    
+
     init(_ id: String, latitude: Double, longitude: Double) {
         self.id = id
         self.coordinate = CLLocationCoordinate2D(
@@ -25,7 +25,14 @@ class FlutterWidgetAnnotationView: MKAnnotationView {
         {
             self.image = originalImage.resized(
                 minWidth: annotation.minWidth, minHeight: annotation.minHeight)
+
+            if #available(iOS 16.0, *) {
+                anchorPoint = CGPoint(x: 0.5, y: 1.0)
+            } else {
+                centerOffset = CGPoint(x: 0, y: -self.image!.size.height / 2)
+            }
         }
+
     }
 
     required init?(coder aDecoder: NSCoder) {
