@@ -34,14 +34,6 @@ class _MapPageState extends State<MapPage> {
   late final NekonataMapController _controller;
   final rnd = Random();
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _addMarkers();
-    });
-  }
-
   Future<void> _addMarkers() async {
     final png = await rootBundle
         .load("assets/marker.png")
@@ -74,10 +66,10 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  void _clearMarkers() {
-    _controller.removeMarker("1");
-    _controller.removeMarker("2");
-    _controller.removeMarker("3");
+  Future<void> _clearMarkers() async {
+    await _controller.removeMarker("1");
+    await _controller.removeMarker("2");
+    await _controller.removeMarker("3");
   }
 
   @override
@@ -87,10 +79,19 @@ class _MapPageState extends State<MapPage> {
       body: NekonataMap(
         latitude: 35.681236,
         longitude: 139.767125,
-        onControllerCreated: (controller) => _controller = controller,
+        onControllerCreated: (controller) {
+          _controller = controller;
+          _addMarkers();
+        },
       ),
       persistentFooterButtons: [
-        IconButton(onPressed: _addMarkers, icon: Icon(Icons.refresh)),
+        IconButton(
+          onPressed: () async {
+            await _clearMarkers();
+            await _addMarkers();
+          },
+          icon: Icon(Icons.refresh),
+        ),
         IconButton(onPressed: _clearMarkers, icon: Icon(Icons.clear)),
         IconButton(
           onPressed: () {
