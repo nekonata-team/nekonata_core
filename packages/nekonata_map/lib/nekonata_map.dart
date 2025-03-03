@@ -82,37 +82,31 @@ class NekonataMapController {
   final MethodChannel channel;
   final OnMarkerSelected? onMarkerSelected;
 
-  void addMarker(MarkerData marker) {
-    channel.invokeMethod('addMarker', marker.toMap());
-  }
+  Future<void> addMarker(MarkerData marker) =>
+      channel.invokeMethod('addMarker', marker.toMap());
 
-  void removeMarker(String id) {
-    channel.invokeMethod('removeMarker', id);
-  }
+  Future<void> removeMarker(String id) =>
+      channel.invokeMethod('removeMarker', id);
 
-  void updateMarker({
+  Future<void> updateMarker({
     required String id,
     required double latitude,
     required double longitude,
-  }) {
-    channel.invokeMethod('updateMarker', {
-      'id': id,
-      'latitude': latitude,
-      'longitude': longitude,
-    });
-  }
+  }) => channel.invokeMethod('updateMarker', {
+    'id': id,
+    'latitude': latitude,
+    'longitude': longitude,
+  });
 
-  void moveCamera({
+  Future<void> moveCamera({
     double? latitude,
     double? longitude,
     double? zoom,
     double? heading,
-  }) {
-    channel.invokeMethod('moveCamera', {
-      'latitude': latitude,
-      'longitude': longitude,
-      'zoom': zoom,
-      'heading': heading,
-    });
-  }
+  }) => channel.invokeMethod('moveCamera', {
+    'latitude': latitude,
+    'longitude': longitude,
+    'zoom': zoom,
+    'heading': heading,
+  });
 }
