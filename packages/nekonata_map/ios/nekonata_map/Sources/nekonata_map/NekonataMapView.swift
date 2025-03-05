@@ -38,10 +38,12 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         arguments args: Any?,
         binaryMessenger messenger: FlutterBinaryMessenger?
     ) {
-        map = MKMapView(frame: frame)
         channel = FlutterMethodChannel(name: "nekonata_map_\(viewId)", binaryMessenger: messenger!)
+        map = MKMapView(frame: frame)
 
         super.init()
+
+        channel.setMethodCallHandler(handle)
 
         map.delegate = self
         if let dict = args as? [String: Any],
@@ -53,8 +55,20 @@ class NekonataMapView: NSObject, FlutterPlatformView {
                 center: coordinate, latitudinalMeters: 1000, longitudinalMeters: 1000)
             map.setRegion(region, animated: false)
         }
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleMapTap(_:)))
+        tapGesture.delegate = self
+        map.addGestureRecognizer(tapGesture)
+    }
 
-        channel.setMethodCallHandler(handle)
+    @objc func handleMapTap(_ sender: UITapGestureRecognizer) {
+        let location = sender.location(in: map)
+        let coordinate = map.convert(location, toCoordinateFrom: map)
+
+        let arguments: [String: Any] = [
+            "latitude": coordinate.latitude,
+            "longitude": coordinate.longitude
+        ]
+        channel.invokeMethod("onMapTapped", arguments: arguments)
     }
 
     func view() -> UIView {
@@ -146,15 +160,15 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         else {
             throw NSError(domain: "Invalid arguments", code: 0, userInfo: nil)
         }
-        
+
         let current = map.camera
-        
+
         let latitude = args["latitude"] as? Double ?? current.centerCoordinate.latitude
         let longitude = args["longitude"] as? Double ?? current.centerCoordinate.longitude
-        
+
         let zoom = args["zoom"] as? Double
         let altitude = zoom.map(convertToAltitude) ?? current.altitude
-        
+
         let heading = args["heading"] as? Double ?? current.heading
 
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
@@ -165,7 +179,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
     func annotation(withId id: String) -> Annotation? {
         return map.annotations.compactMap({ $0 as? Annotation }).first(where: { $0.id == id })
     }
-    
+
     func convertToAltitude(_ zoom: Double) -> Double {
         // zoom 0 時の高度（この値は例示用です）
         let altitudeAtZoom0 = 591657550.5
@@ -180,11 +194,11 @@ extension NekonataMapView: MKMapViewDelegate {
         guard let annotation = annotation as? Annotation else {
             return nil
         }
-        
+
         if let view = mapView.dequeueReusableAnnotationView(withIdentifier: annotation.id) {
             return view
         }
-        
+
         if annotation.image != nil {
             return ImageAnnotationView(annotation: annotation, reuseIdentifier: annotation.id)
         } else {
@@ -198,5 +212,11 @@ extension NekonataMapView: MKMapViewDelegate {
         }
 
         channel.invokeMethod("onSelected", arguments: annotation.id)
+    }
+}
+
+extension NekonataMapView: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        return !(touch.view is MKAnnotationView)
     }
 }

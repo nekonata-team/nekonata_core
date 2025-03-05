@@ -35,13 +35,12 @@ class ImageAnnotationView: MKAnnotationView {
         if let originalImage = originalImage {
             imageView = UIImageView(image: originalImage)
             imageView.contentMode = .scaleAspectFit
-            
+
             let width = annotation.minWidth ?? originalImage.size.width
             let height = annotation.minHeight ?? originalImage.size.height
-            
+
             imageView.frame = CGRect(x: 0, y: 0, width: width, height: height)
-            self.frame = imageView.frame
-            
+
             if let animatedImage = originalImage.images {
                 imageView.animationImages = animatedImage
                 imageView.animationDuration = originalImage.duration
@@ -49,11 +48,12 @@ class ImageAnnotationView: MKAnnotationView {
             }
 
             addSubview(imageView)
+            frame = imageView.frame
 
             if #available(iOS 16.0, *) {
                 anchorPoint = CGPoint(x: 0.5, y: 1.0)
             } else {
-                centerOffset = CGPoint(x: 0, y: -self.image!.size.height / 2)
+                centerOffset = CGPoint(x: 0, y: imageView.image!.size.height / 2)
             }
         }
 
@@ -65,6 +65,7 @@ class ImageAnnotationView: MKAnnotationView {
 
     deinit {
         imageView?.stopAnimating()
+        imageView = nil
     }
 }
 

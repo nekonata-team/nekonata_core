@@ -195,6 +195,15 @@ internal class NekonataMapView(
             channel.invokeMethod("onSelected", marker.tag as? String)
             true
         }
+        map.setOnMapClickListener { latLng ->
+            channel.invokeMethod(
+                "onMapTapped",
+                mapOf(
+                    "latitude" to latLng.latitude,
+                    "longitude" to latLng.longitude,
+                ),
+            )
+        }
     }
 
     override fun onResume(owner: LifecycleOwner) {

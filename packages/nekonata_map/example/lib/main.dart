@@ -53,6 +53,7 @@ class _MapPageState extends State<MapPage> {
         longitude: 139.767125,
         image: png,
         minHeight: 40,
+        minWidth: 40,
       ),
     );
     _controller.addMarker(
@@ -62,6 +63,7 @@ class _MapPageState extends State<MapPage> {
         longitude: 139.767125,
         image: gif,
         minHeight: 64,
+        minWidth: 64,
       ),
     );
   }
@@ -83,6 +85,10 @@ class _MapPageState extends State<MapPage> {
           _controller = controller;
           _addMarkers();
         },
+        onMarkerSelected: (id) => debugPrint("Marker selected: $id"),
+        onMapTapped:
+            (latitude, longitude) =>
+                debugPrint("Map tapped: $latitude, $longitude"),
       ),
       persistentFooterButtons: [
         IconButton(
