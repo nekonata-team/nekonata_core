@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:nekonata_map/marker.dart';
 
 /// Callback typedef that will be called when a marker is tapped.
@@ -21,19 +22,15 @@ class NekonataMap extends StatelessWidget {
   /// Creates a new [NekonataMap] instance.
   const NekonataMap({
     super.key,
-    this.latitude,
-    this.longitude,
+    this.latLng,
     this.onControllerCreated,
     this.onMarkerTapped,
     this.onMapTapped,
     this.onZoomEnd,
   });
 
-  /// The initial latitude of the map.
-  final double? latitude;
-
-  /// The initial longitude of the map.
-  final double? longitude;
+  /// The initial latitude and longitude of the map.
+  final LatLng? latLng;
 
   /// Callback that will be called when a controller is created.
   final OnControllerCreated? onControllerCreated;
@@ -49,9 +46,9 @@ class NekonataMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final creationParams = <String, dynamic>{
-      'latitude': latitude,
-      'longitude': longitude,
+    final creationParams = {
+      'latitude': latLng?.latitude,
+      'longitude': latLng?.longitude,
     };
 
     if (Platform.isIOS) {
@@ -134,26 +131,17 @@ class NekonataMapController {
   /// Updates a marker on the map.
   ///
   /// This can reuse the same markers, but the id must be unique.
-  Future<void> updateMarker({
-    required String id,
-    required double latitude,
-    required double longitude,
-  }) => _channel.invokeMethod('updateMarker', {
-    'id': id,
-    'latitude': latitude,
-    'longitude': longitude,
-  });
+  Future<void> updateMarker(String id, LatLng latLng) => _channel.invokeMethod(
+    'updateMarker',
+    {'id': id, 'latitude': latLng.latitude, 'longitude': latLng.longitude},
+  );
 
   /// Moves the camera to a specific location.
-  Future<void> moveCamera({
-    double? latitude,
-    double? longitude,
-    double? zoom,
-    double? heading,
-  }) => _channel.invokeMethod('moveCamera', {
-    'latitude': latitude,
-    'longitude': longitude,
-    'zoom': zoom,
-    'heading': heading,
-  });
+  Future<void> moveCamera({LatLng? latLng, double? zoom, double? heading}) =>
+      _channel.invokeMethod('moveCamera', {
+        'latitude': latLng?.latitude,
+        'longitude': latLng?.longitude,
+        'zoom': zoom,
+        'heading': heading,
+      });
 }

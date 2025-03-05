@@ -4,7 +4,9 @@ Wrapper of `MKMapView` and `MapView` with `GoogleMap`.
 
 This can integrate platform maps.
 
-Any images can use as map marker. Also you can use platform specific marker
+Any images can use as map marker. Also you can use platform specific marker.
+
+This package depends on latlong2.
 
 ## Getting Started
 

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:latlong2/latlong.dart';
 
 /// Data class that represents a marker.
 @immutable
@@ -6,8 +7,7 @@ class MarkerData {
   /// Creates a new [MarkerData] instance.
   const MarkerData({
     required this.id,
-    required this.longitude,
-    required this.latitude,
+    required this.latLng,
     this.minWidth,
     this.minHeight,
     this.image,
@@ -16,11 +16,8 @@ class MarkerData {
   /// The unique identifier of the marker.
   final String id;
 
-  /// The longitude of the marker.
-  final double longitude;
-
-  /// The latitude of the marker.
-  final double latitude;
+  /// The latitude and longitude of the marker.
+  final LatLng latLng;
 
   /// The minimum width of the image.
   final double? minWidth;
@@ -40,8 +37,8 @@ class MarkerData {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'longitude': longitude,
-      'latitude': latitude,
+      'longitude': latLng.longitude,
+      'latitude': latLng.latitude,
       'minWidth': minWidth,
       'minHeight': minHeight,
       'image': image,

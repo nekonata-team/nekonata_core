@@ -17,6 +17,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  latlong2:
   nekonata_map:
     # When depending on this package from a real application you should use:
     #   nekonata_map: ^x.y.z

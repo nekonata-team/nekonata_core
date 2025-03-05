@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:nekonata_map/marker.dart';
 import 'package:nekonata_map/nekonata_map.dart';
 
@@ -44,13 +45,12 @@ class _MapPageState extends State<MapPage> {
         .then((value) => value.buffer.asUint8List());
 
     _controller.addMarker(
-      MarkerData(id: "1", latitude: 35.680, longitude: 139.767125),
+      MarkerData(id: "1", latLng: LatLng(35.68, 139.767125)),
     );
     _controller.addMarker(
       MarkerData(
         id: "2",
-        latitude: 35.681236,
-        longitude: 139.767125,
+        latLng: LatLng(35.681236, 139.767125),
         image: png,
         minHeight: 40,
         minWidth: 40,
@@ -59,8 +59,7 @@ class _MapPageState extends State<MapPage> {
     _controller.addMarker(
       MarkerData(
         id: "3",
-        latitude: 35.682,
-        longitude: 139.767125,
+        latLng: LatLng(35.682, 139.767125),
         image: gif,
         minHeight: 64,
         minWidth: 64,
@@ -79,8 +78,7 @@ class _MapPageState extends State<MapPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Nekonata Map')),
       body: NekonataMap(
-        latitude: 35.681236,
-        longitude: 139.767125,
+        latLng: const LatLng(35.681236, 139.767125),
         onControllerCreated: (controller) {
           _controller = controller;
           _addMarkers();
@@ -106,9 +104,8 @@ class _MapPageState extends State<MapPage> {
             final lonDelta = 0.01 * (rnd.nextDouble() - 0.5);
 
             _controller.updateMarker(
-              id: "1",
-              latitude: 35.681236 + latDelta,
-              longitude: 139.767125 + lonDelta,
+              "1",
+              LatLng(35.681236 + latDelta, 139.767125 + lonDelta),
             );
           },
           icon: Icon(Icons.update),
@@ -121,8 +118,7 @@ class _MapPageState extends State<MapPage> {
             final heading = rnd.nextDouble() * 360;
 
             _controller.moveCamera(
-              latitude: 35.681236 + latDelta,
-              longitude: 139.767125 + lonDelta,
+              latLng: LatLng(35.681236 + latDelta, 139.767125 + lonDelta),
               zoom: zoom,
               heading: heading,
             );
