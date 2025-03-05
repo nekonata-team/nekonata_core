@@ -105,6 +105,8 @@ class NekonataMapView: NSObject, FlutterPlatformView {
             } catch {
                 result(error)
             }
+        case "zoom":
+            result(getZoomLevel(for: map))
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -187,6 +189,12 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         let altitude = altitudeAtZoom0 / pow(2, zoom)
         return altitude
     }
+    
+    // ズームレベルを計算する
+    func getZoomLevel(for mapView: MKMapView) -> Double {
+        let longitudeDelta = mapView.region.span.longitudeDelta
+        return log2(360 / longitudeDelta)
+    }
 }
 
 extension NekonataMapView: MKMapViewDelegate {
@@ -212,6 +220,16 @@ extension NekonataMapView: MKMapViewDelegate {
         }
 
         channel.invokeMethod("onMarkerTapped", arguments: annotation.id)
+    }
+    
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        if (animated) {
+            return
+        }
+        
+        let zoomLevel = getZoomLevel(for: mapView)
+        
+        channel.invokeMethod("onZoomEnd", arguments: zoomLevel)
     }
 }
 

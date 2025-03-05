@@ -77,6 +77,10 @@ internal class NekonataMapView(
                     }
                 }
 
+                "zoom" -> {
+                    result.success(googleMap.cameraPosition.zoom)
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -189,6 +193,11 @@ internal class NekonataMapView(
             val lng = args["longitude"] as Double
             val coordinate = LatLng(lat, lng)
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinate, 15f))
+        }
+
+        map.setOnCameraIdleListener {
+            val zoom = googleMap.cameraPosition.zoom
+            channel.invokeMethod("onZoomEnd", zoom)
         }
 
         map.setOnMarkerClickListener { marker ->

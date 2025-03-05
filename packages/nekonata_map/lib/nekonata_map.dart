@@ -10,6 +10,9 @@ typedef OnMarkerTapped = void Function(String id);
 /// Callback typedef that will be called when the map is tapped.
 typedef OnMapTapped = void Function(double latitude, double longitude);
 
+/// Callback typedef that will be called when the zoom level of the map changes.
+typedef OnZoomEnd = void Function(double zoom);
+
 /// Callback typedef that will be called when a controller is created.
 typedef OnControllerCreated = void Function(NekonataMapController controller);
 
@@ -23,6 +26,7 @@ class NekonataMap extends StatelessWidget {
     this.onControllerCreated,
     this.onMarkerTapped,
     this.onMapTapped,
+    this.onZoomEnd,
   });
 
   /// The initial latitude of the map.
@@ -40,6 +44,9 @@ class NekonataMap extends StatelessWidget {
   /// Callback that will be called when the map is tapped.
   final OnMapTapped? onMapTapped;
 
+  /// Callback that will be called when the zoom level of the map changes.
+  final OnZoomEnd? onZoomEnd;
+
   @override
   Widget build(BuildContext context) {
     final creationParams = <String, dynamic>{
@@ -55,6 +62,7 @@ class NekonataMap extends StatelessWidget {
             id,
             onMarkerTapped: onMarkerTapped,
             onMapTapped: onMapTapped,
+            onZoomEnd: onZoomEnd,
           );
           onControllerCreated?.call(controller);
         },
@@ -69,6 +77,7 @@ class NekonataMap extends StatelessWidget {
           id,
           onMarkerTapped: onMarkerTapped,
           onMapTapped: onMapTapped,
+          onZoomEnd: onZoomEnd,
         );
         onControllerCreated?.call(controller);
       },
@@ -87,19 +96,21 @@ class NekonataMapController {
     int id, {
     OnMarkerTapped? onMarkerTapped,
     OnMapTapped? onMapTapped,
-  }) : _onMarkerTapped = onMarkerTapped,
-       _onMapTapped = onMapTapped,
-       _channel = MethodChannel('nekonata_map_$id') {
+    OnZoomEnd? onZoomEnd,
+  }) : _channel = MethodChannel('nekonata_map_$id') {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onMarkerTapped':
-          _onMarkerTapped?.call(call.arguments as String);
+          onMarkerTapped?.call(call.arguments as String);
         case 'onMapTapped':
           final args = call.arguments as Map<dynamic, dynamic>;
           final latitude = args['latitude'] as double;
           final longitude = args['longitude'] as double;
 
-          _onMapTapped?.call(latitude, longitude);
+          onMapTapped?.call(latitude, longitude);
+        case 'onZoomEnd':
+          final zoom = call.arguments as double;
+          onZoomEnd?.call(zoom);
         default:
           throw MissingPluginException(call.method);
       }
@@ -107,8 +118,10 @@ class NekonataMapController {
   }
 
   final MethodChannel _channel;
-  final OnMarkerTapped? _onMarkerTapped;
-  final OnMapTapped? _onMapTapped;
+
+  /// Gets the current zoom level of the map.
+  Future<double> get zoom =>
+      _channel.invokeMethod<double>('zoom').then((value) => value!);
 
   /// Adds a marker to the map.
   Future<void> addMarker(MarkerData marker) =>

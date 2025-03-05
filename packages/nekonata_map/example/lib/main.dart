@@ -89,6 +89,7 @@ class _MapPageState extends State<MapPage> {
         onMapTapped:
             (latitude, longitude) =>
                 debugPrint("Map tapped: $latitude, $longitude"),
+        onZoomEnd: (zoom) => debugPrint("Zoom end: $zoom"),
       ),
       persistentFooterButtons: [
         IconButton(
