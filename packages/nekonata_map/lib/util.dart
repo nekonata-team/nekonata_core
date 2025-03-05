@@ -6,9 +6,9 @@ extension NekonataMapControllerX on NekonataMapController {
   /// Sets the region of the map from a list of [LatLng].
   /// Calculates minimum and maximum latitude and longitude from the list of [LatLng]
   Future<void> setRegionFromLatLngList(
-    List<LatLng> latLngList,
-    int paddingPx,
-  ) async {
+    List<LatLng> latLngList, {
+    int paddingPx = 0,
+  }) async {
     assert(latLngList.isNotEmpty, 'latLngList must not be empty');
 
     var minLat = double.infinity;
