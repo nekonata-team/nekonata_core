@@ -7,3 +7,4 @@ environment:
 workspace:
   - packages/nekonata_service
   - packages/nekonata_location_fetcher
+  - packages/nekonata_map

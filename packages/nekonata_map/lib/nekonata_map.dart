@@ -4,9 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nekonata_map/marker.dart';
 
+/// Callback typedef that will be called when a marker is selected.
 typedef OnMarkerSelected = void Function(String id);
 
+/// Callback typedef that will be called when a controller is created.
+typedef OnControllerCreated = void Function(NekonataMapController controller);
+
+/// A widget that displays a map.
 class NekonataMap extends StatefulWidget {
+  /// Creates a new [NekonataMap] instance.
   const NekonataMap({
     super.key,
     this.latitude,
@@ -15,9 +21,16 @@ class NekonataMap extends StatefulWidget {
     this.onMarkerSelected,
   });
 
+  /// The initial latitude of the map.
   final double? latitude;
+
+  /// The initial longitude of the map.
   final double? longitude;
-  final void Function(NekonataMapController controller)? onControllerCreated;
+
+  /// Callback that will be called when a controller is created.
+  final OnControllerCreated? onControllerCreated;
+
+  /// Callback that will be called when a marker is selected.
   final OnMarkerSelected? onMarkerSelected;
 
   @override
@@ -29,8 +42,8 @@ class _NekonataMapState extends State<NekonataMap> {
   @override
   Widget build(BuildContext context) {
     final creationParams = <String, dynamic>{
-      "latitude": widget.latitude,
-      "longitude": widget.longitude,
+      'latitude': widget.latitude,
+      'longitude': widget.longitude,
     };
 
     if (Platform.isIOS) {
@@ -38,7 +51,7 @@ class _NekonataMapState extends State<NekonataMap> {
         viewType: 'nekonata_map',
         onPlatformViewCreated: (id) {
           setState(() {
-            controller = NekonataMapController(
+            controller = NekonataMapController._(
               id,
               onMarkerSelected: widget.onMarkerSelected,
             );
@@ -53,7 +66,7 @@ class _NekonataMapState extends State<NekonataMap> {
       viewType: 'nekonata_map',
       onPlatformViewCreated: (id) {
         setState(() {
-          controller = NekonataMapController(
+          controller = NekonataMapController._(
             id,
             onMarkerSelected: widget.onMarkerSelected,
           );
@@ -66,44 +79,55 @@ class _NekonataMapState extends State<NekonataMap> {
   }
 }
 
+/// A controller for a [NekonataMap] widget.
+///
+/// The controller can not create manually,
+/// this will be created by the [NekonataMap] widget.
 class NekonataMapController {
-  NekonataMapController(int id, {required this.onMarkerSelected})
-    : channel = MethodChannel('nekonata_map_$id') {
-    channel.setMethodCallHandler((call) async {
+  NekonataMapController._(int id, {OnMarkerSelected? onMarkerSelected})
+    : _onMarkerSelected = onMarkerSelected,
+      _channel = MethodChannel('nekonata_map_$id') {
+    _channel.setMethodCallHandler((call) async {
       switch (call.method) {
-        case "onSelected":
-          onMarkerSelected?.call(call.arguments);
+        case 'onSelected':
+          _onMarkerSelected?.call(call.arguments as String);
         default:
           throw MissingPluginException(call.method);
       }
     });
   }
 
-  final MethodChannel channel;
-  final OnMarkerSelected? onMarkerSelected;
+  final MethodChannel _channel;
+  final OnMarkerSelected? _onMarkerSelected;
 
+  /// Adds a marker to the map.
   Future<void> addMarker(MarkerData marker) =>
-      channel.invokeMethod('addMarker', marker.toMap());
+      _channel.invokeMethod('addMarker', marker.toMap());
 
+  /// Removes a marker from the map.
   Future<void> removeMarker(String id) =>
-      channel.invokeMethod('removeMarker', id);
+      _channel.invokeMethod('removeMarker', id);
 
+  /// Updates a marker on the map.
+  ///
+  /// This can reuse the same markers, but the id must be unique.
   Future<void> updateMarker({
     required String id,
     required double latitude,
     required double longitude,
-  }) => channel.invokeMethod('updateMarker', {
+  }) => _channel.invokeMethod('updateMarker', {
     'id': id,
     'latitude': latitude,
     'longitude': longitude,
   });
 
+  /// Moves the camera to a specific location.
   Future<void> moveCamera({
     double? latitude,
     double? longitude,
     double? zoom,
     double? heading,
-  }) => channel.invokeMethod('moveCamera', {
+  }) => _channel.invokeMethod('moveCamera', {
     'latitude': latitude,
     'longitude': longitude,
     'zoom': zoom,
