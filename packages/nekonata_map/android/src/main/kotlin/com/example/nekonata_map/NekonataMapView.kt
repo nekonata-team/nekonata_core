@@ -14,6 +14,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -42,39 +43,28 @@ internal class NekonataMapView(
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "addMarker" -> {
-                    try {
-                        addMarker(call.arguments as Map<String, Any>)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("Error", e.message, null)
-                    }
+                    addMarker(call.arguments as Map<String, Any>)
+                    result.success(null)
                 }
 
                 "removeMarker" -> {
-                    try {
-                        removeMarker(call.arguments as String)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("Error", e.message, null)
-                    }
+                    removeMarker(call.arguments as String)
+                    result.success(null)
                 }
 
                 "updateMarker" -> {
-                    try {
-                        updateMarker(call.arguments as Map<String, Any>)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("Error", e.message, null)
-                    }
+                    updateMarker(call.arguments as Map<String, Any>)
+                    result.success(null)
                 }
 
                 "moveCamera" -> {
-                    try {
-                        moveCamera(call.arguments as Map<String, Any>)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("Error", e.message, null)
-                    }
+                    moveCamera(call.arguments as Map<String, Any>)
+                    result.success(null)
+                }
+
+                "setRegion" -> {
+                    setRegion(call.arguments as Map<String, Any>)
+                    result.success(null)
                 }
 
                 "zoom" -> {
@@ -182,6 +172,22 @@ internal class NekonataMapView(
             .bearing(heading?.toFloat() ?: current.bearing)
             .build()
         googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(position))
+    }
+
+
+    private fun setRegion(args: Map<String, Any>) {
+        val minLat = args["minLatitude"] as Double
+        val minLon = args["minLongitude"] as Double
+        val maxLat = args["maxLatitude"] as Double
+        val maxLon = args["maxLongitude"] as Double
+        val paddingPx = args["paddingPx"] as Int
+
+        val southWest = LatLng(minLat, minLon)
+        val northEast = LatLng(maxLat, maxLon)
+
+        val latLngBounds = LatLngBounds(southWest, northEast)
+
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(latLngBounds, paddingPx))
     }
 
 

@@ -144,4 +144,17 @@ class NekonataMapController {
         'zoom': zoom,
         'heading': heading,
       });
+
+  /// Sets the region of the map.
+  Future<void> setRegion({
+    required LatLng min,
+    required LatLng max,
+    int paddingPx = 0,
+  }) => _channel.invokeMethod('setRegion', {
+    'minLatitude': min.latitude,
+    'minLongitude': min.longitude,
+    'maxLatitude': max.latitude,
+    'maxLongitude': max.longitude,
+    'paddingPx': paddingPx,
+  });
 }
