@@ -192,7 +192,7 @@ internal class NekonataMapView(
         }
 
         map.setOnMarkerClickListener { marker ->
-            channel.invokeMethod("onSelected", marker.tag as? String)
+            channel.invokeMethod("onMarkerTapped", marker.tag as? String)
             true
         }
         map.setOnMapClickListener { latLng ->

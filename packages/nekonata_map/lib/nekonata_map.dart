@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nekonata_map/marker.dart';
 
-/// Callback typedef that will be called when a marker is selected.
-typedef OnMarkerSelected = void Function(String id);
+/// Callback typedef that will be called when a marker is tapped.
+typedef OnMarkerTapped = void Function(String id);
 
 /// Callback typedef that will be called when the map is tapped.
 typedef OnMapTapped = void Function(double latitude, double longitude);
@@ -21,7 +21,7 @@ class NekonataMap extends StatelessWidget {
     this.latitude,
     this.longitude,
     this.onControllerCreated,
-    this.onMarkerSelected,
+    this.onMarkerTapped,
     this.onMapTapped,
   });
 
@@ -34,8 +34,8 @@ class NekonataMap extends StatelessWidget {
   /// Callback that will be called when a controller is created.
   final OnControllerCreated? onControllerCreated;
 
-  /// Callback that will be called when a marker is selected.
-  final OnMarkerSelected? onMarkerSelected;
+  /// Callback that will be called when a marker is tapped.
+  final OnMarkerTapped? onMarkerTapped;
 
   /// Callback that will be called when the map is tapped.
   final OnMapTapped? onMapTapped;
@@ -53,7 +53,7 @@ class NekonataMap extends StatelessWidget {
         onPlatformViewCreated: (id) {
           final controller = NekonataMapController._(
             id,
-            onMarkerSelected: onMarkerSelected,
+            onMarkerTapped: onMarkerTapped,
             onMapTapped: onMapTapped,
           );
           onControllerCreated?.call(controller);
@@ -67,7 +67,7 @@ class NekonataMap extends StatelessWidget {
       onPlatformViewCreated: (id) {
         final controller = NekonataMapController._(
           id,
-          onMarkerSelected: onMarkerSelected,
+          onMarkerTapped: onMarkerTapped,
           onMapTapped: onMapTapped,
         );
         onControllerCreated?.call(controller);
@@ -85,15 +85,15 @@ class NekonataMap extends StatelessWidget {
 class NekonataMapController {
   NekonataMapController._(
     int id, {
-    OnMarkerSelected? onMarkerSelected,
+    OnMarkerTapped? onMarkerTapped,
     OnMapTapped? onMapTapped,
-  }) : _onMarkerSelected = onMarkerSelected,
+  }) : _onMarkerTapped = onMarkerTapped,
        _onMapTapped = onMapTapped,
        _channel = MethodChannel('nekonata_map_$id') {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
-        case 'onSelected':
-          _onMarkerSelected?.call(call.arguments as String);
+        case 'onMarkerTapped':
+          _onMarkerTapped?.call(call.arguments as String);
         case 'onMapTapped':
           final args = call.arguments as Map<dynamic, dynamic>;
           final latitude = args['latitude'] as double;
@@ -107,7 +107,7 @@ class NekonataMapController {
   }
 
   final MethodChannel _channel;
-  final OnMarkerSelected? _onMarkerSelected;
+  final OnMarkerTapped? _onMarkerTapped;
   final OnMapTapped? _onMapTapped;
 
   /// Adds a marker to the map.

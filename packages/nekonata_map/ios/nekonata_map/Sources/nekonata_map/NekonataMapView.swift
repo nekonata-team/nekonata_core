@@ -211,7 +211,7 @@ extension NekonataMapView: MKMapViewDelegate {
             return
         }
 
-        channel.invokeMethod("onSelected", arguments: annotation.id)
+        channel.invokeMethod("onMarkerTapped", arguments: annotation.id)
     }
 }
 

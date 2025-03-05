@@ -85,7 +85,7 @@ class _MapPageState extends State<MapPage> {
           _controller = controller;
           _addMarkers();
         },
-        onMarkerSelected: (id) => debugPrint("Marker selected: $id"),
+        onMarkerTapped: (id) => debugPrint("Marker tapped: $id"),
         onMapTapped:
             (latitude, longitude) =>
                 debugPrint("Map tapped: $latitude, $longitude"),
