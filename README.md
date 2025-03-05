@@ -32,7 +32,7 @@ READMEはできるだけ簡潔に書く
     flutter create -t plugin --platforms=ios,android nekonata_<package name>
     ```
 
-2. `pubspec.yaml`に`resolution: workspace`を追加
+2. 各パッケージの`pubspec.yaml`に`resolution: workspace`を追加
 
     ```yaml
     name: nekonata_map
@@ -41,6 +41,16 @@ READMEはできるだけ簡潔に書く
 
     # here for monorepo
     resolution: workspace
+    ```
+
+3. ルートの`pubspec.yaml`に各パッケージを追加
+
+    ```yaml
+    workspace:
+        - packages/nekonata_service
+        - packages/nekonata_location_fetcher
+        - packages/nekonata_map
+        - packages/nekonata_<package name> # here
     ```
 
 ### READMEのテンプレート
