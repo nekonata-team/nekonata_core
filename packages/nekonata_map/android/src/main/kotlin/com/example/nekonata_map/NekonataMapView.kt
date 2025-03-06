@@ -57,6 +57,11 @@ internal class NekonataMapView(
                     result.success(null)
                 }
 
+                "setMarkerVisible" -> {
+                    setMarkerVisible(call.arguments as Map<String, Any>)
+                    result.success(null)
+                }
+
                 "moveCamera" -> {
                     moveCamera(call.arguments as Map<String, Any>)
                     result.success(null)
@@ -154,6 +159,14 @@ internal class NekonataMapView(
             marker.position = LatLng(lat, lng)
         }
         valueAnimator.start()
+    }
+
+    private fun setMarkerVisible(args: Map<String, Any>) {
+        val id = args["id"] as? String ?: throw Exception("id is required")
+        val isVisible = args["isVisible"] as? Boolean ?: true
+
+        val marker = container.get(id) ?: return
+        marker.isVisible = isVisible
     }
 
     private fun moveCamera(args: Map<String, Any>) {

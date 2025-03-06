@@ -86,6 +86,9 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         case "updateMarker":
             updateMarker(call)
             result(nil)
+        case "setMarkerVisible":
+            setMarkerVisible(call)
+            result(nil)
         case "moveCamera":
             moveCamera(call)
             result(nil)
@@ -140,6 +143,23 @@ class NekonataMapView: NSObject, FlutterPlatformView {
             let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
             UIView.animate(withDuration: 0.25) {
                 annotation.coordinate = coordinate
+            }
+        }
+    }
+
+    func setMarkerVisible(_ call: FlutterMethodCall) {
+        guard let args = call.arguments as? [String: Any],
+            let id = args["id"] as? String,
+            let isVisible = args["isVisible"] as? Bool
+        else {
+            return
+        }
+
+        if let annotation = annotation(withId: id) {
+            if let view = map.view(for: annotation) {
+                UIView.animate(withDuration: 0.25) {
+                    view.alpha = isVisible ? 1 : 0
+                }
             }
         }
     }

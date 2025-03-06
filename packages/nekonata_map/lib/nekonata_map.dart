@@ -136,6 +136,10 @@ class NekonataMapController {
     {'id': id, 'latitude': latLng.latitude, 'longitude': latLng.longitude},
   );
 
+  /// Sets
+  Future<void> setMarkerVisible(String id, {bool isVisible = true}) => _channel
+      .invokeMethod('setMarkerVisible', {'id': id, 'isVisible': isVisible});
+
   /// Moves the camera to a specific location.
   Future<void> moveCamera({LatLng? latLng, double? zoom, double? heading}) =>
       _channel.invokeMethod('moveCamera', {

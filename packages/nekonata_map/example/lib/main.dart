@@ -33,6 +33,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   late final NekonataMapController _controller;
+  var isVisible = true;
   final rnd = Random();
 
   Future<void> _addMarkers() async {
@@ -124,6 +125,15 @@ class _MapPageState extends State<MapPage> {
             );
           },
           icon: Icon(Icons.camera),
+        ),
+        IconButton(
+          onPressed: () {
+            setState(() => isVisible = !isVisible);
+            _controller.setMarkerVisible("1", isVisible: isVisible);
+            _controller.setMarkerVisible("2", isVisible: isVisible);
+            _controller.setMarkerVisible("3", isVisible: isVisible);
+          },
+          icon: Icon(Icons.opacity),
         ),
       ],
     );
