@@ -223,7 +223,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
     }
 
     func convertToAltitude(_ zoom: Double) -> Double {
-        // zoom 0 時の高度（この値は例示用です）
+        // zoom 0 時の高度
         let altitudeAtZoom0 = 591657550.5
         // 緯度による補正
         let altitude = altitudeAtZoom0 / pow(2, zoom)
@@ -265,9 +265,6 @@ extension NekonataMapView: MKMapViewDelegate {
     }
 
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        if animated {
-            return
-        }
         // 既存のワークアイテムがあればキャンセルする
         regionDidChangeWorkItem?.cancel()
 
