@@ -47,7 +47,9 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         super.init()
 
         // channel setup
-        channel.setMethodCallHandler(handle)
+        channel.setMethodCallHandler { [weak self] call, result in
+            self?.handle(call, result: result)
+        }
 
         // map setup
         map.delegate = self
