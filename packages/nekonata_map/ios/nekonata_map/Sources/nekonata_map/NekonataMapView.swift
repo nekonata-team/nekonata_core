@@ -32,6 +32,9 @@ class NekonataMapView: NSObject, FlutterPlatformView {
     private var map: MKMapView
     private var channel: FlutterMethodChannel
 
+    private var regionDidChangeWorkItem: DispatchWorkItem?
+    private var preZoomLevel: Double?
+
     init(
         frame: CGRect,
         viewIdentifier viewId: Int64,
@@ -43,8 +46,10 @@ class NekonataMapView: NSObject, FlutterPlatformView {
 
         super.init()
 
+        // channel setup
         channel.setMethodCallHandler(handle)
 
+        // map setup
         map.delegate = self
         if let dict = args as? [String: Any],
             let latitude = dict["latitude"] as? CLLocationDegrees,
@@ -58,17 +63,9 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleMapTap(_:)))
         tapGesture.delegate = self
         map.addGestureRecognizer(tapGesture)
-    }
 
-    @objc func handleMapTap(_ sender: UITapGestureRecognizer) {
-        let location = sender.location(in: map)
-        let coordinate = map.convert(location, toCoordinateFrom: map)
-
-        let arguments: [String: Any] = [
-            "latitude": coordinate.latitude,
-            "longitude": coordinate.longitude,
-        ]
-        channel.invokeMethod("onMapTapped", arguments: arguments)
+        // state setup
+        preZoomLevel = getZoomLevel(for: map)
     }
 
     func view() -> UIView {
@@ -230,10 +227,12 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         return altitude
     }
 
-    // ズームレベルを計算する
     func getZoomLevel(for mapView: MKMapView) -> Double {
         let longitudeDelta = mapView.region.span.longitudeDelta
-        return log2(360 / longitudeDelta)
+        let zoomLevel = log2(360 / longitudeDelta)
+        // 小数第一位まで
+        let roundedZoomLevel = round(10 * zoomLevel) / 10
+        return roundedZoomLevel
     }
 }
 
@@ -266,10 +265,21 @@ extension NekonataMapView: MKMapViewDelegate {
         if animated {
             return
         }
+        // 既存のワークアイテムがあればキャンセルする
+        regionDidChangeWorkItem?.cancel()
 
-        let zoomLevel = getZoomLevel(for: mapView)
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            let zoomLevel = self.getZoomLevel(for: mapView)
+            if preZoomLevel != zoomLevel {
+                self.channel.invokeMethod("onZoomEnd", arguments: zoomLevel)
+                preZoomLevel = zoomLevel
+            }
+        }
 
-        channel.invokeMethod("onZoomEnd", arguments: zoomLevel)
+        regionDidChangeWorkItem = workItem
+        // 0.2秒後に実行（この間に連続イベントがあればキャンセルされる）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
     }
 }
 
@@ -278,5 +288,18 @@ extension NekonataMapView: UIGestureRecognizerDelegate {
         -> Bool
     {
         return !(touch.view is MKAnnotationView)
+    }
+}
+
+extension NekonataMapView {
+    @objc func handleMapTap(_ sender: UITapGestureRecognizer) {
+        let location = sender.location(in: map)
+        let coordinate = map.convert(location, toCoordinateFrom: map)
+
+        let arguments: [String: Any] = [
+            "latitude": coordinate.latitude,
+            "longitude": coordinate.longitude,
+        ]
+        channel.invokeMethod("onMapTapped", arguments: arguments)
     }
 }

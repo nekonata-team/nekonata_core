@@ -20,6 +20,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.platform.PlatformView
 import pl.droidsonroids.gif.GifDrawable
+import kotlin.math.roundToInt
 
 internal class NekonataMapView(
     private val context: Context,
@@ -34,6 +35,7 @@ internal class NekonataMapView(
     private var channel = MethodChannel(messenger, "nekonata_map_$id")
     private val container = MarkerContainer()
 
+    private var preZoom: Float = 0F
 
     init {
         lifecycleProvider.getLifecycle()?.addObserver(this)
@@ -78,6 +80,43 @@ internal class NekonataMapView(
 
                 else -> result.notImplemented()
             }
+        }
+    }
+
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+
+
+        creationParams.let { args ->
+            val lat = args?.get("latitude") as Double
+            val lng = args["longitude"] as Double
+            val coordinate = LatLng(lat, lng)
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinate, 15f))
+
+            preZoom = getZoom()
+        }
+
+        map.setOnCameraIdleListener {
+            val zoom = getZoom()
+            if (preZoom != zoom) {
+                channel.invokeMethod("onZoomEnd", zoom)
+                preZoom = zoom
+            }
+        }
+
+        map.setOnMarkerClickListener { marker ->
+            channel.invokeMethod("onMarkerTapped", marker.tag as? String)
+            true
+        }
+        map.setOnMapClickListener { latLng ->
+            channel.invokeMethod(
+                "onMapTapped",
+                mapOf(
+                    "latitude" to latLng.latitude,
+                    "longitude" to latLng.longitude,
+                ),
+            )
         }
     }
 
@@ -167,6 +206,9 @@ internal class NekonataMapView(
 
         val marker = container.get(id) ?: return
         marker.isVisible = isVisible
+
+        // addMarkerと同様、ほんの少しだけzoomの値を書き換えて再描画する
+        googleMap.moveCamera(CameraUpdateFactory.zoomBy(0.0001f))
     }
 
     private fun moveCamera(args: Map<String, Any>) {
@@ -203,35 +245,9 @@ internal class NekonataMapView(
         googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(latLngBounds, paddingPx))
     }
 
-
-    override fun onMapReady(map: GoogleMap) {
-        googleMap = map
-
-        creationParams.let { args ->
-            val lat = args?.get("latitude") as Double
-            val lng = args["longitude"] as Double
-            val coordinate = LatLng(lat, lng)
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinate, 15f))
-        }
-
-        map.setOnCameraIdleListener {
-            val zoom = googleMap.cameraPosition.zoom
-            channel.invokeMethod("onZoomEnd", zoom)
-        }
-
-        map.setOnMarkerClickListener { marker ->
-            channel.invokeMethod("onMarkerTapped", marker.tag as? String)
-            true
-        }
-        map.setOnMapClickListener { latLng ->
-            channel.invokeMethod(
-                "onMapTapped",
-                mapOf(
-                    "latitude" to latLng.latitude,
-                    "longitude" to latLng.longitude,
-                ),
-            )
-        }
+    private fun getZoom(): Float {
+        val zoom = googleMap.cameraPosition.zoom
+        return (zoom * 10).roundToInt() / 10f
     }
 
     override fun onResume(owner: LifecycleOwner) {
