@@ -62,6 +62,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         }
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleMapTap(_:)))
         tapGesture.delegate = self
+        tapGesture.cancelsTouchesInView = false
         map.addGestureRecognizer(tapGesture)
 
         // state setup
@@ -73,29 +74,31 @@ class NekonataMapView: NSObject, FlutterPlatformView {
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        switch call.method {
-        case "addMarker":
-            addMarker(call)
-            result(nil)
-        case "removeMarker":
-            removeMarker(call)
-            result(nil)
-        case "updateMarker":
-            updateMarker(call)
-            result(nil)
-        case "setMarkerVisible":
-            setMarkerVisible(call)
-            result(nil)
-        case "moveCamera":
-            moveCamera(call)
-            result(nil)
-        case "setRegion":
-            setRegion(call)
-            result(nil)
-        case "zoom":
-            result(getZoomLevel(for: map))
-        default:
-            result(FlutterMethodNotImplemented)
+        DispatchQueue.main.async {
+            switch call.method {
+            case "addMarker":
+                self.addMarker(call)
+                result(nil)
+            case "removeMarker":
+                self.removeMarker(call)
+                result(nil)
+            case "updateMarker":
+                self.updateMarker(call)
+                result(nil)
+            case "setMarkerVisible":
+                self.setMarkerVisible(call)
+                result(nil)
+            case "moveCamera":
+                self.moveCamera(call)
+                result(nil)
+            case "setRegion":
+                self.setRegion(call)
+                result(nil)
+            case "zoom":
+                result(self.getZoomLevel(for: self.map))
+            default:
+                result(FlutterMethodNotImplemented)
+            }
         }
     }
 
@@ -287,7 +290,14 @@ extension NekonataMapView: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch)
         -> Bool
     {
-        return !(touch.view is MKAnnotationView)
+        !(touch.view is MKAnnotationView)
+    }
+
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        true
     }
 }
 
