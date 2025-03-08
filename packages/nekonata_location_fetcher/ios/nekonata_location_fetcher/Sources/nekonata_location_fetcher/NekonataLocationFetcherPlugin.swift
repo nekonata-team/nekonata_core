@@ -3,12 +3,17 @@ import Flutter
 import UIKit
 
 public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationManagerDelegate {
-  private var locationManager: CLLocationManager?
-  private var channel: FlutterMethodChannel?
-  private let flutterEngine = FlutterEngine(
-    name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
 
   public static var onDispatched: ((FlutterEngine) -> Void)?
+
+  private let flutterEngine = FlutterEngine(
+    name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
+  private var channel: FlutterMethodChannel?
+
+  private var locationManager: CLLocationManager?
+  private var lastUpdateTimestamp: TimeInterval = 0
+  private let updateInterval: TimeInterval = 5
+  private var updateWorkItem: DispatchWorkItem?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = NekonataLocationFetcherPlugin()
@@ -21,29 +26,32 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    switch call.method {
-    case "setCallback":
-      do {
-        try setCallback(call)
-      } catch {
-        result(FlutterError(code: "error", message: error.localizedDescription, details: nil))
-        return
-      }
+    DispatchQueue.main.async {
 
-      result(nil)
-    case "setAndroidNotification":
-      debugPrint("setAndroidNotification is ignored on iOS")
-      result(nil)
-    case "start":
-      start()
-      result(nil)
-    case "stop":
-      stop()
-      result(nil)
-    case "isActivated":
-      result(Store.isActivated)
-    default:
-      result(FlutterMethodNotImplemented)
+      switch call.method {
+      case "setCallback":
+        do {
+          try self.setCallback(call)
+        } catch {
+          result(FlutterError(code: "error", message: error.localizedDescription, details: nil))
+          return
+        }
+
+        result(nil)
+      case "setAndroidNotification":
+        debugPrint("setAndroidNotification is ignored on iOS")
+        result(nil)
+      case "start":
+        self.start()
+        result(nil)
+      case "stop":
+        self.stop()
+        result(nil)
+      case "isActivated":
+        result(Store.isActivated)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
     }
   }
 
@@ -128,6 +136,39 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
   ) {
     guard let location = locations.last else { return }
 
+    // debugPrint("called", location.coordinate.longitude, location.coordinate.latitude)
+
+    // throttle like Android FusedLocationProviderClient.setInterval
+    let currentTimestamp = Date().timeIntervalSince1970
+    let interval = currentTimestamp - lastUpdateTimestamp
+
+    if interval >= updateInterval {
+      callback(location)
+      lastUpdateTimestamp = currentTimestamp
+      return
+    }
+
+    updateWorkItem?.cancel()
+    let delay = max(0, updateInterval - interval)
+
+    let workItem = DispatchWorkItem { [weak self] in
+      guard let self = self else { return }
+
+      self.callback(location)
+      self.lastUpdateTimestamp = currentTimestamp + delay
+    }
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+    updateWorkItem = workItem
+  }
+
+  public func locationManager(
+    _ manager: CLLocationManager, didFailWithError error: Error
+  ) {
+    debugPrint("Failed to find user's location: \(error.localizedDescription)")
+  }
+
+  private func callback(_ location: CLLocation) {
     let batteryLevel = UIDevice.current.batteryLevel
     let battery = batteryLevel >= 0 ? Int(batteryLevel * 100) : -1
 
@@ -140,12 +181,12 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
       "bearing": location.course,
       "battery": battery,
     ]
-    channel?.invokeMethod("callback", arguments: json)
-  }
 
-  public func locationManager(
-    _ manager: CLLocationManager, didFailWithError error: Error
-  ) {
-    debugPrint("Failed to find user's location: \(error.localizedDescription)")
+    // Dart側で、@pragma('vm:entry-point')として実行する想定
+    // UIの処理は入り得ないので、global queueで実行
+    DispatchQueue.global().async {
+      // debugPrint("notify callback", location.coordinate.longitude, location.coordinate.latitude)
+      self.channel?.invokeMethod("callback", arguments: json)
+    }
   }
 }
