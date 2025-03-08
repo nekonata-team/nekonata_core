@@ -281,6 +281,7 @@ extension NekonataMapView: MKMapViewDelegate {
 
         regionDidChangeWorkItem = workItem
         // 0.2秒後に実行（この間に連続イベントがあればキャンセルされる）
+        // Flutter側でUIの処理をする可能性があるので、メインスレッドで実行する
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
     }
 }
