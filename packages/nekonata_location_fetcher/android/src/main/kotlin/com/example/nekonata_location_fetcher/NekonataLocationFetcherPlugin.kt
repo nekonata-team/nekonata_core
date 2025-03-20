@@ -40,11 +40,16 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
           setCallback(call)
           result.success(null)
         } catch (e: Exception) {
-          result.error("error", e.message, null)
+          result.error("error", e.localizedMessage, null)
         }
       }
-      "setAndroidNotification" -> {
-        setAndroidNotification(call)
+      "configure" -> {
+        try {
+          configure(call)
+          result.success(null)
+        } catch (e: Exception) {
+          result.error("error", e.localizedMessage, null)
+        }
         result.success(null)
       }
       "start" -> {
@@ -69,24 +74,20 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun setCallback(call: MethodCall) {
-    val dispatcherHandle = call.argument<Long>("dispatcherRawHandle")
-    val handle = call.argument<Long>("rawHandle")
-
-    // null check and throw
-    if (dispatcherHandle == null || handle == null) {
-      throw Exception("dispatcherHandle and handle must not be null. dispatcherHandle: $dispatcherHandle, handle: $handle")
+    val dispatcherHandle = requireNotNull(call.argument<Long>("dispatcherRawHandle")) {
+      "dispatcherRawHandle must not be null"
+    }
+    val handle = requireNotNull(call.argument<Long>("rawHandle")) {
+      "rawHandle must not be null"
     }
 
     Store.dispatcherRawHandle = dispatcherHandle
     Store.rawHandle = handle
   }
 
-  private fun setAndroidNotification(call: MethodCall) {
-    val title = call.argument<String>("title")
-    val text = call.argument<String>("text")
-
-    Store.notificationTitle = title
-    Store.notificationText = text
+  private fun configure(call: MethodCall) {
+    call.argument<String>("notificationTitle")?.let { Store.notificationTitle = it }
+    call.argument<String>("notificationText")?.let { Store.notificationText = it }
   }
 
   private fun start() {

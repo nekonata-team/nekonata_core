@@ -103,8 +103,8 @@ class LocationForegroundService : Service() {
         notificationManager.createNotificationChannel(channel)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(Store.notificationTitle ?: "Location Tracking")
-            .setContentText(Store.notificationText ?: "Getting location updates...")
+            .setContentTitle(Store.notificationTitle)
+            .setContentText(Store.notificationText)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .build()
     }

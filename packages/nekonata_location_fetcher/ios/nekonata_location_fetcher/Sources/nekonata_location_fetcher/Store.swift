@@ -1,28 +1,35 @@
-public class Store {
-    public static var rawHandle: Int {
-        get {
-            return UserDefaults.standard.integer(forKey: "rawHandle")
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: "rawHandle")
-        }
-    }
+struct UserDefaultsKeys {
+    static let rawHandle = "rawHandle"
+    static let dispatcherRawHandle = "dispatcherRawHandle"
+    static let isActivated = "isActivated"
+    static let useCLServiceSession = "useCLServiceSession"
+}
 
-    public static var dispatcherRawHandle: Int {
-        get {
-            return UserDefaults.standard.integer(forKey: "dispatcherRawHandle")
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: "dispatcherRawHandle")
-        }
-    }
+@propertyWrapper
+internal struct UserDefault<T> {
+    let key: String
+    let defaultValue: T
 
-    public static var isActivated: Bool {
+    var wrappedValue: T {
         get {
-            return UserDefaults.standard.bool(forKey: "isActivated")
+            return UserDefaults.standard.object(forKey: key) as? T ?? defaultValue
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "isActivated")
+            UserDefaults.standard.set(newValue, forKey: key)
         }
     }
+}
+
+internal class Store {
+    @UserDefault(key: UserDefaultsKeys.rawHandle, defaultValue: 0)
+    public static var rawHandle: Int
+
+    @UserDefault(key: UserDefaultsKeys.dispatcherRawHandle, defaultValue: 0)
+    public static var dispatcherRawHandle: Int
+
+    @UserDefault(key: UserDefaultsKeys.isActivated, defaultValue: false)
+    public static var isActivated: Bool
+
+    @UserDefault(key: UserDefaultsKeys.useCLServiceSession, defaultValue: true)
+    public static var useCLServiceSession: Bool
 }

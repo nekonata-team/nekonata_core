@@ -29,9 +29,10 @@ class MockNekonataLocationFetcherPlatform
   }
 
   @override
-  Future<void> setAndroidNotification({
-    required String? title,
-    required String? text,
+  Future<void> configure({
+    bool? useCLServiceSession,
+    String? notificationTitle,
+    String? notificationText,
   }) {
     return Future.value();
   }

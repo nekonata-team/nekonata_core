@@ -22,8 +22,13 @@ class NekonataLocationFetcher extends NekonataLocationFetcherPlatform {
   Future<bool> get isActivated async => _platform.isActivated;
 
   @override
-  Future<void> setAndroidNotification({
-    required String? title,
-    required String? text,
-  }) => _platform.setAndroidNotification(title: title, text: text);
+  Future<void> configure({
+    bool? useCLServiceSession,
+    String? notificationTitle,
+    String? notificationText,
+  }) => _platform.configure(
+    useCLServiceSession: useCLServiceSession,
+    notificationTitle: notificationTitle,
+    notificationText: notificationText,
+  );
 }

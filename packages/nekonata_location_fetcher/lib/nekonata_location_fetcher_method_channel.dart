@@ -66,13 +66,15 @@ class MethodChannelNekonataLocationFetcher
   }
 
   @override
-  Future<void> setAndroidNotification({
-    required String? title,
-    required String? text,
+  Future<void> configure({
+    bool? useCLServiceSession,
+    String? notificationTitle,
+    String? notificationText,
   }) async {
-    await methodChannel.invokeMethod<void>('setAndroidNotification', {
-      'title': title,
-      'text': text,
+    await methodChannel.invokeMethod<void>('configure', {
+      'useCLServiceSession': useCLServiceSession,
+      'notificationTitle': notificationTitle,
+      'notificationText': notificationText,
     });
   }
 }

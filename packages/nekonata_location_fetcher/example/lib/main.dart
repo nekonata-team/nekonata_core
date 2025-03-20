@@ -38,9 +38,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     fetcher.setCallback(_callback);
-    fetcher.setAndroidNotification(
-      title: 'Nekonata Location Fetcher',
-      text: 'Fetching location data',
+    fetcher.configure(
+      notificationTitle: 'Nekonata Location Fetcher',
+      notificationText: 'Fetching location data. This is customized text.',
     );
   }
 

@@ -50,13 +50,15 @@ abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
     throw UnimplementedError('isActivated has not been implemented.');
   }
 
-  /// Sets an Android notification.
-  Future<void> setAndroidNotification({
-    required String? title,
-    required String? text,
+  /// Configures the Android notification.
+  ///
+  /// These values will be stored permanently.
+  /// If set to `null`, the value will not be changed.
+  Future<void> configure({
+    bool? useCLServiceSession,
+    String? notificationTitle,
+    String? notificationText,
   }) async {
-    throw UnimplementedError(
-      'setAndroidNotification() has not been implemented.',
-    );
+    throw UnimplementedError('configure() has not been implemented.');
   }
 }
