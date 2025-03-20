@@ -57,7 +57,7 @@ class Location {
   @override
   String toString() {
     return 'Location{latitude: $latitude, longitude: $longitude, speed: $speed,'
-        ' timestamp: $timestamp, bearing: $bearing, battery: $battery}';
+        ' timestamp: $dateTime, bearing: $bearing, battery: $battery}';
   }
 
   /// The timestamp of the location data as [DateTime].
