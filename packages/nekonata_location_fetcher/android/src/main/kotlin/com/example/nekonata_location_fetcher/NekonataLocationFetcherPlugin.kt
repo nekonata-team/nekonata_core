@@ -50,7 +50,6 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
         } catch (e: Exception) {
           result.error("error", e.localizedMessage, null)
         }
-        result.success(null)
       }
       "start" -> {
         start()

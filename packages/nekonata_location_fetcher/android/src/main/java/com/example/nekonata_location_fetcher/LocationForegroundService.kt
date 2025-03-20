@@ -31,6 +31,9 @@ class LocationForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        createNotificationChannel()
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
@@ -97,11 +100,13 @@ class LocationForegroundService : Service() {
         }
     }
 
-    private fun createNotification(): Notification {
+    private fun createNotificationChannel() {
         val channel = NotificationChannel(CHANNEL_ID, "Location Service", NotificationManager.IMPORTANCE_DEFAULT)
         val notificationManager = getSystemService(NotificationManager::class.java) as NotificationManager
         notificationManager.createNotificationChannel(channel)
+    }
 
+    private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(Store.notificationTitle)
             .setContentText(Store.notificationText)
