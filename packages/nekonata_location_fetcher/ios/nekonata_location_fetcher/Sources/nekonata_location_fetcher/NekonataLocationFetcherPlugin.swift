@@ -73,44 +73,89 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
   private func start() {
     locationManager = CLLocationManager()
     locationManager?.delegate = self
-    // locationManager?.desiredAccuracy = kCLLocationAccuracyBest
-    locationManager?.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+    locationManager?.desiredAccuracy = kCLLocationAccuracyBest  // BestForNavigationも検討中
     locationManager?.distanceFilter = 10
     locationManager?.allowsBackgroundLocationUpdates = true
     locationManager?.pausesLocationUpdatesAutomatically = false
-    // locationManager?.requestAlwaysAuthorization()
-    locationManager?.startUpdatingLocation()
-    locationManager?.startMonitoringSignificantLocationChanges()
 
-    Store.isActivated = true
+    activateWatching()
 
     debugPrint("Start location fetching")
   }
 
   private func stop() {
-    locationManager?.stopUpdatingLocation()
-    locationManager?.stopMonitoringSignificantLocationChanges()
+    inactivateWatching()
+
     locationManager = nil
 
-    Store.isActivated = false
+    if #available(iOS 17.0, *) {
+      BackgroundActivitySessionManager.invalidate()
+    }
 
     debugPrint("Stop location fetching")
   }
 
-  public func applicationDidEnterBackground(_ application: UIApplication) {
-    locationManager?.startUpdatingLocation()
+  private func activateWatching() {
+    Store.isActivated = true
+
+    if #available(iOS 18.0, *) {
+      let _ = CLServiceSession(authorization: .always)
+
+      Task {
+        for try await update in CLLocationUpdate.liveUpdates() {
+          if !Store.isActivated {
+            break
+          }
+          guard let location = update.location else { continue }
+          onUpdate(location)
+        }
+      }
+
+    } else {
+      locationManager?.startUpdatingLocation()
+    }
+
     locationManager?.startMonitoringSignificantLocationChanges()
   }
 
+  private func inactivateWatching() {
+    Store.isActivated = false
+
+    if #available(iOS 18.0, *) {
+      // checking in liveUpdates loop by Store.isActivated
+    } else {
+      locationManager?.stopUpdatingLocation()
+    }
+
+    locationManager?.stopMonitoringSignificantLocationChanges()
+  }
+
+  public func applicationDidEnterBackground(_ application: UIApplication) {
+    guard Store.isActivated else { return }
+
+    activateWatching()
+
+    if #available(iOS 17.0, *) {
+      BackgroundActivitySessionManager.activate()
+    }
+  }
+
   public func applicationWillTerminate(_ application: UIApplication) {
-    locationManager?.startMonitoringSignificantLocationChanges()
+    guard Store.isActivated else { return }
+
+    activateWatching()
+  }
+
+  public func applicationWillEnterForeground(_ application: UIApplication) {
+    if #available(iOS 17.0, *) {
+      BackgroundActivitySessionManager.invalidate()
+    }
   }
 
   public func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
   ) -> Bool {
-    debugPrint("NekonataLocationFetcherPlugin Did finish launching with options")
     if let info = FlutterCallbackCache.lookupCallbackInformation(Int64(Store.dispatcherRawHandle)) {
 
       flutterEngine.run(withEntrypoint: info.callbackName, libraryURI: info.callbackLibraryPath)
@@ -122,11 +167,11 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
       )
     }
 
+    UIDevice.current.isBatteryMonitoringEnabled = true
+
     if Store.isActivated {
       start()
     }
-
-    UIDevice.current.isBatteryMonitoringEnabled = true
 
     return true
   }
@@ -134,8 +179,18 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
   public func locationManager(
     _ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]
   ) {
-    guard let location = locations.last else { return }
 
+    guard let location = locations.last else { return }
+    onUpdate(location)
+  }
+
+  public func locationManager(
+    _ manager: CLLocationManager, didFailWithError error: Error
+  ) {
+    debugPrint("Failed to find user's location: \(error.localizedDescription)")
+  }
+
+  private func onUpdate(_ location: CLLocation) {
     // debugPrint("called", location.coordinate.longitude, location.coordinate.latitude)
 
     // throttle like Android FusedLocationProviderClient.setInterval
@@ -162,12 +217,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
     updateWorkItem = workItem
   }
 
-  public func locationManager(
-    _ manager: CLLocationManager, didFailWithError error: Error
-  ) {
-    debugPrint("Failed to find user's location: \(error.localizedDescription)")
-  }
-
   private func callback(_ location: CLLocation) {
     let batteryLevel = UIDevice.current.batteryLevel
     let battery = batteryLevel >= 0 ? Int(batteryLevel * 100) : -1
@@ -182,9 +231,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
       "battery": battery,
     ]
 
-    // Dart側で、@pragma('vm:entry-point')として実行する想定
-    // UIの処理は入り得ないので、global queueで実行
-    DispatchQueue.global().async {
+    DispatchQueue.main.async {
       // debugPrint("notify callback", location.coordinate.longitude, location.coordinate.latitude)
       self.channel?.invokeMethod("callback", arguments: json)
     }
