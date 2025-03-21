@@ -2,8 +2,6 @@ package com.example.nekonata_location_fetcher
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -90,7 +88,7 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun start() {
-    if (checkLocationPermission()) {
+    if (Permission.hasLocationPermission(context)) {
       val intent = Intent(context, LocationForegroundService::class.java)
       context.startForegroundService(intent)
     } else {
@@ -106,11 +104,5 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
     val intent = Intent(context, LocationForegroundService::class.java)
     context.stopService(intent)
     Store.isActivated = false
-  }
-
-  private fun checkLocationPermission(): Boolean {
-    val fineLocation = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    val coarseLocation = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    return fineLocation || coarseLocation
   }
 }
