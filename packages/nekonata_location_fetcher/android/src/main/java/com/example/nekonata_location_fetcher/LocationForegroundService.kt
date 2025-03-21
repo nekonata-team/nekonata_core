@@ -36,8 +36,8 @@ class LocationForegroundService : Service() {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-            .setMinUpdateDistanceMeters(10f)
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, Store.interval * 1000)
+            .setMinUpdateDistanceMeters(Store.distanceFilter)
             .build()
 
         val flutterLoader = FlutterLoader().apply {

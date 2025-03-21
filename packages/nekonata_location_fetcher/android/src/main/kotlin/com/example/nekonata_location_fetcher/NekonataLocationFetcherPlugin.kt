@@ -85,6 +85,8 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
   private fun configure(call: MethodCall) {
     call.argument<String>("notificationTitle")?.let { Store.notificationTitle = it }
     call.argument<String>("notificationText")?.let { Store.notificationText = it }
+    call.argument<Float>("distanceFilter")?.let { Store.distanceFilter = it }
+    call.argument<Long>("interval")?.let { Store.interval = it }
   }
 
   private fun start() {

@@ -50,11 +50,19 @@ abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
     throw UnimplementedError('isActivated has not been implemented.');
   }
 
-  /// Configures the Android notification.
+  /// Configures the location fetcher.
   ///
+  /// Basically, before calling [start], you can set the following values.
   /// These values will be stored permanently.
   /// If set to `null`, the value will not be changed.
+  /// - [distanceFilter]: The minimum distance between location updates in meters.
+  /// - [interval]: The minimum time between location updates in seconds.
+  /// - [useCLServiceSession]: IOS Whether to use CoreLocation service session.
+  /// - [notificationTitle]: ANDROID The title of the notification.
+  /// - [notificationText]: ANDROID The text of the notification.
   Future<void> configure({
+    double? distanceFilter,
+    int? interval,
     bool? useCLServiceSession,
     String? notificationTitle,
     String? notificationText,

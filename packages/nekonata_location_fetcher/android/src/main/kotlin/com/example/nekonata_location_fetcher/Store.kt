@@ -11,30 +11,40 @@ object Store {
     private const val KEY_IS_ACTIVATED = "isActivated"
     private const val KEY_NOTIFICATION_TITLE = "notificationTitle"
     private const val KEY_NOTIFICATION_TEXT = "notificationText"
+    private const val KEY_DISTANCE_FILTER = "distanceFilter"
+    private const val KEY_INTERVAL = "interval"
 
-    private lateinit var preferences: SharedPreferences
+    private lateinit var prefs: SharedPreferences
 
     fun init(context: Context) {
-        preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     var rawHandle: Long
-        get() = preferences.getLong(KEY_RAW_HANDLE, 0)
-        set(value) = preferences.edit { putLong(KEY_RAW_HANDLE, value) }
+        get() = prefs.getLong(KEY_RAW_HANDLE, 0)
+        set(value) = prefs.edit { putLong(KEY_RAW_HANDLE, value) }
 
     var dispatcherRawHandle: Long
-        get() = preferences.getLong(KEY_DISPATCHER_RAW_HANDLE, 0)
-        set(value) = preferences.edit { putLong(KEY_DISPATCHER_RAW_HANDLE, value) }
+        get() = prefs.getLong(KEY_DISPATCHER_RAW_HANDLE, 0)
+        set(value) = prefs.edit { putLong(KEY_DISPATCHER_RAW_HANDLE, value) }
 
     var isActivated: Boolean
-        get() = preferences.getBoolean(KEY_IS_ACTIVATED, false)
-        set(value) = preferences.edit { putBoolean(KEY_IS_ACTIVATED, value) }
+        get() = prefs.getBoolean(KEY_IS_ACTIVATED, false)
+        set(value) = prefs.edit { putBoolean(KEY_IS_ACTIVATED, value) }
 
     var notificationTitle: String
-        get() = preferences.getString(KEY_NOTIFICATION_TITLE, "Location Tracking")!!
-        set(value) = preferences.edit { putString(KEY_NOTIFICATION_TITLE, value) }
+        get() = prefs.getString(KEY_NOTIFICATION_TITLE, "Location Tracking")!!
+        set(value) = prefs.edit { putString(KEY_NOTIFICATION_TITLE, value) }
 
     var notificationText: String
-        get() = preferences.getString(KEY_NOTIFICATION_TEXT, "Getting location updates...")!!
-        set(value) = preferences.edit { putString(KEY_NOTIFICATION_TEXT, value) }
+        get() = prefs.getString(KEY_NOTIFICATION_TEXT, "Getting location updates...")!!
+        set(value) = prefs.edit { putString(KEY_NOTIFICATION_TEXT, value) }
+
+    var distanceFilter: Float
+        get() = prefs.getFloat(KEY_DISTANCE_FILTER, 10f)
+        set(value) = prefs.edit { putFloat(KEY_DISTANCE_FILTER, value) }
+
+    var interval: Long
+        get() = prefs.getLong(KEY_INTERVAL, 5)
+        set(value) = prefs.edit { putLong(KEY_INTERVAL, value) }
 }

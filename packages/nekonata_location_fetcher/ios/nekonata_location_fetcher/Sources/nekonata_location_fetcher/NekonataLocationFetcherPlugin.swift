@@ -89,13 +89,20 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
         if let useCLServiceSession = args["useCLServiceSession"] as? Bool {
             Store.useCLServiceSession = useCLServiceSession
         }
+        if let distanceFilter = args["distanceFilter"] as? Double {
+            Store.distanceFilter = distanceFilter
+        }
+        if let interval = args["interval"] as? Int {
+            Store.interval = interval
+        }
     }
 
     private func start() {
         locationManager = CLLocationManager()
         locationManager?.delegate = self
         locationManager?.desiredAccuracy = kCLLocationAccuracyBest  // BestForNavigationも検討中
-        locationManager?.distanceFilter = 10
+        locationManager?.distanceFilter = Store.distanceFilter
+        updateInterval = TimeInterval(Store.interval)
         locationManager?.allowsBackgroundLocationUpdates = true
         locationManager?.pausesLocationUpdatesAutomatically = false
 

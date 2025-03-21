@@ -23,10 +23,14 @@ class NekonataLocationFetcher extends NekonataLocationFetcherPlatform {
 
   @override
   Future<void> configure({
+    double? distanceFilter,
+    int? interval,
     bool? useCLServiceSession,
     String? notificationTitle,
     String? notificationText,
   }) => _platform.configure(
+    distanceFilter: distanceFilter,
+    interval: interval,
     useCLServiceSession: useCLServiceSession,
     notificationTitle: notificationTitle,
     notificationText: notificationText,

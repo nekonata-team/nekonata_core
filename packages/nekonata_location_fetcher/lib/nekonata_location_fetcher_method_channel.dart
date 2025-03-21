@@ -67,11 +67,15 @@ class MethodChannelNekonataLocationFetcher
 
   @override
   Future<void> configure({
+    double? distanceFilter,
+    int? interval,
     bool? useCLServiceSession,
     String? notificationTitle,
     String? notificationText,
   }) async {
     await methodChannel.invokeMethod<void>('configure', {
+      'distanceFilter': distanceFilter,
+      'interval': interval,
       'useCLServiceSession': useCLServiceSession,
       'notificationTitle': notificationTitle,
       'notificationText': notificationText,
