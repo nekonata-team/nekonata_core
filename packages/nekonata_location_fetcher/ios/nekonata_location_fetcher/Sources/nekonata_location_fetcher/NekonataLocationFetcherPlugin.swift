@@ -13,7 +13,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
 
     private var locationManager: CLLocationManager?
     private var lastUpdateTimestamp: TimeInterval = 0
-    private let updateInterval: TimeInterval = 5
+    private var updateInterval: TimeInterval = 5
     private var updateWorkItem: DispatchWorkItem?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
