@@ -37,11 +37,17 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    fetcher.setCallback(_callback);
-    fetcher.configure(
-      notificationTitle: 'Nekonata Location Fetcher',
-      notificationText: 'Fetching location data. This is customized text.',
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await fetcher.setCallback(_callback);
+      await fetcher.configure(
+        distanceFilter: 10,
+        interval: 5,
+        notificationTitle: 'Nekonata Location Fetcher',
+        notificationText: 'Fetching location data. This is customized text.',
+      );
+
+      debugPrint('Configured');
+    });
   }
 
   @override

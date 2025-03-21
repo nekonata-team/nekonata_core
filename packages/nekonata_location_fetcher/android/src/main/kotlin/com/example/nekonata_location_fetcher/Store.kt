@@ -47,4 +47,6 @@ object Store {
     var interval: Long
         get() = prefs.getLong(KEY_INTERVAL, 5)
         set(value) = prefs.edit { putLong(KEY_INTERVAL, value) }
+
+    val intervalMillis: Long get() = interval * 1000
 }
