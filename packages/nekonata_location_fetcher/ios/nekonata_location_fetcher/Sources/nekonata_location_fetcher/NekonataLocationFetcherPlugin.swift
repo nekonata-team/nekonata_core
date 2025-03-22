@@ -3,12 +3,12 @@ import Flutter
 import UIKit
 
 @available(iOS 13.0, *)
-public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationManagerDelegate {
+public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
     /// GeneratedPluginRegistrantを呼び出すために、AppDelegate側で指定する想定
     /// これにより、Dart側のcallbackで任意のライブラリのAPIを呼び出す事ができるようになる
     public static var onDispatched: ((FlutterEngine) -> Void)?
 
-    private let flutterEngine = FlutterEngine(
+    private lazy var flutterEngine = FlutterEngine(
         name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
     private var channel: FlutterMethodChannel?
 
@@ -22,11 +22,14 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = NekonataLocationFetcherPlugin()
 
-        let channel = FlutterMethodChannel(
-            name: "nekonata_location_fetcher", binaryMessenger: registrar.messenger())
-        registrar.addMethodCallDelegate(instance, channel: channel)
-
+        instance.channel = createChannel(binaryMessenger: registrar.messenger())
+        registrar.addMethodCallDelegate(instance, channel: instance.channel!)
         registrar.addApplicationDelegate(instance)
+    }
+    
+    static func createChannel(binaryMessenger: FlutterBinaryMessenger) -> FlutterMethodChannel {
+        return FlutterMethodChannel(
+            name: "nekonata_location_fetcher", binaryMessenger: binaryMessenger)
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -36,25 +39,21 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
             case "setCallback":
                 do {
                     try self.setCallback(call)
+                    result(nil)
                 } catch {
                     result(
                         FlutterError(
                             code: "error", message: error.localizedDescription, details: nil))
-                    return
                 }
-
-                result(nil)
             case "configure":
                 do {
                     try self.configure(call)
+                    result(nil)
                 } catch {
                     result(
                         FlutterError(
                             code: "error", message: error.localizedDescription, details: nil))
-                    return
                 }
-
-                result(nil)
             case "start":
                 self.start()
                 result(nil)
@@ -170,69 +169,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
         debugPrint("Stop location fetching")
     }
 
-    public func applicationDidEnterBackground(_ application: UIApplication) {
-        guard Store.isActivated else { return }
-
-        if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
-            BackgroundActivitySessionManager.activate()
-        }
-    }
-
-    public func applicationWillTerminate(_ application: UIApplication) {
-        guard Store.isActivated else { return }
-
-        // このアプリはterminatedな状態でも位置情報が必要
-        // 明示的に再スタートする
-        start()
-    }
-
-    public func applicationWillEnterForeground(_ application: UIApplication) {
-        if #available(iOS 17.0, *) {
-            BackgroundActivitySessionManager.invalidate()
-        }
-    }
-
-    public func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
-    ) -> Bool {
-        if let info = FlutterCallbackCache.lookupCallbackInformation(
-            Int64(Store.dispatcherRawHandle))
-        {
-
-            flutterEngine.run(
-                withEntrypoint: info.callbackName, libraryURI: info.callbackLibraryPath)
-
-            Self.onDispatched?(flutterEngine)
-
-            channel = FlutterMethodChannel(
-                name: "nekonata_location_fetcher", binaryMessenger: flutterEngine.binaryMessenger
-            )
-        }
-
-        UIDevice.current.isBatteryMonitoringEnabled = true
-
-        if Store.isActivated {
-            start()
-        }
-
-        return true
-    }
-
-    public func locationManager(
-        _ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]
-    ) {
-
-        guard let location = locations.last else { return }
-        onUpdate(location)
-    }
-
-    public func locationManager(
-        _ manager: CLLocationManager, didFailWithError error: Error
-    ) {
-        debugPrint("Failed to find user's location: \(error.localizedDescription)")
-    }
-
     private func onUpdate(_ location: CLLocation) {
         // debugPrint("called", location.coordinate.longitude, location.coordinate.latitude)
 
@@ -274,9 +210,83 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
             "battery": battery,
         ]
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
             // debugPrint("notify callback", location.coordinate.longitude, location.coordinate.latitude)
-            self.channel?.invokeMethod("callback", arguments: json)
+            self?.channel?.invokeMethod("callback", arguments: json)
         }
     }
+}
+
+
+@available(iOS 13.0, *)
+extension NekonataLocationFetcherPlugin: CLLocationManagerDelegate {
+    public func locationManager(
+        _ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]
+    ) {
+
+        guard let location = locations.last else { return }
+        onUpdate(location)
+    }
+
+    public func locationManager(
+        _ manager: CLLocationManager, didFailWithError error: Error
+    ) {
+        debugPrint("Failed to find user's location: \(error.localizedDescription)")
+    }
+}
+
+/// lifecycle
+@available(iOS 13.0, *)
+extension NekonataLocationFetcherPlugin {
+    public func applicationDidEnterBackground(_ application: UIApplication) {
+        guard Store.isActivated else { return }
+
+        if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
+            BackgroundActivitySessionManager.activate()
+        }
+    }
+
+    public func applicationWillTerminate(_ application: UIApplication) {
+        guard Store.isActivated else { return }
+
+        // このアプリはterminatedな状態でも位置情報が必要
+        // 明示的に再スタートする
+        start()
+    }
+
+    public func applicationWillEnterForeground(_ application: UIApplication) {
+        if #available(iOS 17.0, *) {
+            BackgroundActivitySessionManager.invalidate()
+        }
+    }
+
+    public func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
+    ) -> Bool {
+        if let info = FlutterCallbackCache.lookupCallbackInformation(
+            Int64(Store.dispatcherRawHandle))
+        {
+
+            flutterEngine.run(
+                withEntrypoint: info.callbackName, libraryURI: info.callbackLibraryPath)
+
+            Self.onDispatched?(flutterEngine)
+
+            if channel != nil {
+                channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
+            }
+        } else {
+            debugPrint("Dispatcher not found")
+        }
+
+        UIDevice.current.isBatteryMonitoringEnabled = true
+
+        if Store.isActivated {
+            start()
+        }
+
+        return true
+    }
+
 }
