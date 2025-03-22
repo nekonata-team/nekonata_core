@@ -57,13 +57,15 @@ abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
   /// If set to `null`, the value will not be changed.
   /// - [distanceFilter]: The minimum distance between location updates in meters.
   /// - [interval]: The minimum time between location updates in seconds.
-  /// - [useCLServiceSession]: IOS Whether to use CoreLocation service session.
+  /// - [useCLLocationUpdate]: IOS Whether to use CLLocationUpdate. This is for iOS 18.0.
+  /// - [useBackgroundActivitySessionManager]: IOS Whether to use BackgroundActivitySessionManager. This is for iOS 17.0.
   /// - [notificationTitle]: ANDROID The title of the notification.
   /// - [notificationText]: ANDROID The text of the notification.
   Future<void> configure({
     double? distanceFilter,
     int? interval,
-    bool? useCLServiceSession,
+    bool? useCLLocationUpdate,
+    bool? useBackgroundActivitySessionManager,
     String? notificationTitle,
     String? notificationText,
   }) async {

@@ -6,13 +6,16 @@ import androidx.core.content.edit
 
 object Store {
     private const val PREFS_NAME = "store_prefs"
-    private const val KEY_RAW_HANDLE = "rawHandle"
-    private const val KEY_DISPATCHER_RAW_HANDLE = "dispatcherRawHandle"
+
+    // プラットフォーム間のKeyとして扱っているので、変更する際は十分に注意すること
+    // 便宜上、prefsに保存する際のKeyと同名にしている
     private const val KEY_IS_ACTIVATED = "isActivated"
-    private const val KEY_NOTIFICATION_TITLE = "notificationTitle"
-    private const val KEY_NOTIFICATION_TEXT = "notificationText"
-    private const val KEY_DISTANCE_FILTER = "distanceFilter"
-    private const val KEY_INTERVAL = "interval"
+    const val KEY_RAW_HANDLE = "rawHandle"
+    const val KEY_DISPATCHER_RAW_HANDLE = "dispatcherRawHandle"
+    const val KEY_NOTIFICATION_TITLE = "notificationTitle"
+    const val KEY_NOTIFICATION_TEXT = "notificationText"
+    const val KEY_DISTANCE_FILTER = "distanceFilter"
+    const val KEY_INTERVAL = "interval"
 
     private lateinit var prefs: SharedPreferences
 

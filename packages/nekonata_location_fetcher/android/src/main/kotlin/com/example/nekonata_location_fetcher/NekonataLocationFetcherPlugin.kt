@@ -71,10 +71,10 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun setCallback(call: MethodCall) {
-    val dispatcherHandle = requireNotNull(call.argument<Long>("dispatcherRawHandle")) {
+    val dispatcherHandle = requireNotNull(call.argument<Long>(Store.KEY_DISPATCHER_RAW_HANDLE)) {
       "dispatcherRawHandle must not be null"
     }
-    val handle = requireNotNull(call.argument<Long>("rawHandle")) {
+    val handle = requireNotNull(call.argument<Long>(Store.KEY_RAW_HANDLE)) {
       "rawHandle must not be null"
     }
 
@@ -83,10 +83,10 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun configure(call: MethodCall) {
-    call.argument<String>("notificationTitle")?.let { Store.notificationTitle = it }
-    call.argument<String>("notificationText")?.let { Store.notificationText = it }
-    call.argument<Double>("distanceFilter")?.let { Store.distanceFilter = it.toFloat() }
-    call.argument<Int>("interval")?.let { Store.interval = it.toLong() }
+    call.argument<String>(Store.KEY_NOTIFICATION_TITLE)?.let { Store.notificationTitle = it }
+    call.argument<String>(Store.KEY_NOTIFICATION_TEXT)?.let { Store.notificationText = it }
+    call.argument<Double>(Store.KEY_DISTANCE_FILTER)?.let { Store.distanceFilter = it.toFloat() }
+    call.argument<Int>(Store.KEY_INTERVAL)?.let { Store.interval = it.toLong() }
   }
 
   private fun start() {

@@ -25,13 +25,15 @@ class NekonataLocationFetcher extends NekonataLocationFetcherPlatform {
   Future<void> configure({
     double? distanceFilter,
     int? interval,
-    bool? useCLServiceSession,
+    bool? useCLLocationUpdate,
+    bool? useBackgroundActivitySessionManager,
     String? notificationTitle,
     String? notificationText,
   }) => _platform.configure(
     distanceFilter: distanceFilter,
     interval: interval,
-    useCLServiceSession: useCLServiceSession,
+    useCLLocationUpdate: useCLLocationUpdate,
+    useBackgroundActivitySessionManager: useBackgroundActivitySessionManager,
     notificationTitle: notificationTitle,
     notificationText: notificationText,
   );

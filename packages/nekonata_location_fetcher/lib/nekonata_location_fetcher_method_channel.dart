@@ -5,17 +5,32 @@ import 'package:flutter/services.dart';
 import 'package:nekonata_location_fetcher/model.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_platform_interface.dart';
 
+class _Keys {
+  const _Keys._();
+
+  static const callback = 'callback';
+  static const dispatcherRawHandle = 'dispatcherRawHandle';
+  static const rawHandle = 'rawHandle';
+  static const distanceFilter = 'distanceFilter';
+  static const interval = 'interval';
+  static const useCLLocationUpdate = 'useCLLocationUpdate';
+  static const useBackgroundActivitySessionManager =
+      'useBackgroundActivitySessionManager';
+  static const notificationTitle = 'notificationTitle';
+  static const notificationText = 'notificationText';
+}
+
 @pragma('vm:entry-point')
 void _callback() {
-  debugPrint('Despatcher was called');
   WidgetsFlutterBinding.ensureInitialized();
+  debugPrint('Despatcher was called');
   const MethodChannel('nekonata_location_fetcher').setMethodCallHandler((
     call,
   ) async {
     switch (call.method) {
-      case 'callback':
+      case _Keys.callback:
         final json = call.arguments as Map<dynamic, dynamic>;
-        final handle = json['rawHandle'] as int;
+        final handle = json[_Keys.rawHandle] as int;
         final location = Location.fromJson(json);
 
         final callback = PluginUtilities.getCallbackFromHandle(
@@ -55,8 +70,8 @@ class MethodChannelNekonataLocationFetcher
     );
 
     await methodChannel.invokeMethod<void>('setCallback', {
-      'dispatcherRawHandle': dispatcherHandle!.toRawHandle(),
-      'rawHandle': handle!.toRawHandle(),
+      _Keys.dispatcherRawHandle: dispatcherHandle!.toRawHandle(),
+      _Keys.rawHandle: handle!.toRawHandle(),
     });
   }
 
@@ -69,16 +84,19 @@ class MethodChannelNekonataLocationFetcher
   Future<void> configure({
     double? distanceFilter,
     int? interval,
-    bool? useCLServiceSession,
+    bool? useCLLocationUpdate,
+    bool? useBackgroundActivitySessionManager,
     String? notificationTitle,
     String? notificationText,
   }) async {
     await methodChannel.invokeMethod<void>('configure', {
-      'distanceFilter': distanceFilter,
-      'interval': interval,
-      'useCLServiceSession': useCLServiceSession,
-      'notificationTitle': notificationTitle,
-      'notificationText': notificationText,
+      _Keys.distanceFilter: distanceFilter,
+      _Keys.interval: interval,
+      _Keys.useCLLocationUpdate: useCLLocationUpdate,
+      _Keys.useBackgroundActivitySessionManager:
+          useBackgroundActivitySessionManager,
+      _Keys.notificationTitle: notificationTitle,
+      _Keys.notificationText: notificationText,
     });
   }
 }

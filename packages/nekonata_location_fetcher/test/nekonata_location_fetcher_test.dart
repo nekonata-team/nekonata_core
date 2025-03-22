@@ -30,7 +30,10 @@ class MockNekonataLocationFetcherPlatform
 
   @override
   Future<void> configure({
-    bool? useCLServiceSession,
+    double? distanceFilter,
+    int? interval,
+    bool? useCLLocationUpdate,
+    bool? useBackgroundActivitySessionManager,
     String? notificationTitle,
     String? notificationText,
   }) {

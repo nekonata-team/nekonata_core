@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "nekonata_location_fetcher",
     platforms: [
-        .iOS("12.0")
+        .iOS("13.0")
     ],
     products: [
         .library(name: "nekonata-location-fetcher", targets: ["nekonata_location_fetcher"])

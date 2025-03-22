@@ -91,6 +91,13 @@ import nekonata_location_fetcher // here
 }
 ```
 
+- Add `Background Modes` in `Signing & Capabilities`
+  - `Location Updates`
+- Add descriptions in `Info.plist`
+  - `NSLocationAlwaysUsageDescription`
+  - `NSLocationAlwaysAndWhenInUseUsageDescription`
+  - `NSLocationWhenInUseUsageDescription`
+
 ### Android
 
 ```xml
@@ -106,3 +113,5 @@ import nekonata_location_fetcher // here
 ### Limitation
 
 - minSdk is **Android 26**
+- minimum iOS version is **iOS 13**
+  - for use `Task`

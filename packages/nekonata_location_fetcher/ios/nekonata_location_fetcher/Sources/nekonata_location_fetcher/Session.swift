@@ -5,6 +5,7 @@ class BackgroundActivitySessionManager {
     static private var backgroundActivitySession: CLBackgroundActivitySession?
 
     public static func activate() {
+        invalidate()
         backgroundActivitySession = CLBackgroundActivitySession()
     }
 

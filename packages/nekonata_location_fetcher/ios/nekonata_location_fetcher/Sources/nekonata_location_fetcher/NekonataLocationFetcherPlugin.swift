@@ -2,6 +2,7 @@ import CoreLocation
 import Flutter
 import UIKit
 
+@available(iOS 13.0, *)
 public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationManagerDelegate {
     /// GeneratedPluginRegistrantを呼び出すために、AppDelegate側で指定する想定
     /// これにより、Dart側のcallbackで任意のライブラリのAPIを呼び出す事ができるようになる
@@ -15,6 +16,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
     private var lastUpdateTimestamp: TimeInterval = 0
     private var updateInterval: TimeInterval = 5
     private var updateWorkItem: DispatchWorkItem?
+    
+    private var updateTask: Task<Void, Error>?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = NekonataLocationFetcherPlugin()
@@ -68,8 +71,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
 
     private func setCallback(_ call: FlutterMethodCall) throws {
         guard let args = call.arguments as? [String: Any],
-            let rawHandle = args["rawHandle"] as? Int,
-            let dispatcherRawHandle = args["dispatcherRawHandle"] as? Int
+              let rawHandle = args[Keys.rawHandle] as? Int,
+              let dispatcherRawHandle = args[Keys.dispatcherRawHandle] as? Int
         else {
             throw NSError(domain: "Invalid arguments", code: 0, userInfo: nil)
         }
@@ -86,84 +89,91 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
             )
         }
 
-        if let useCLServiceSession = args["useCLServiceSession"] as? Bool {
-            Store.useCLServiceSession = useCLServiceSession
+        if let useCLLocationUpdate = args[Keys.useCLLocationUpdate] as? Bool {
+            Store.useCLLocationUpdate = useCLLocationUpdate
         }
-        if let distanceFilter = args["distanceFilter"] as? Double {
+        if let useBackgroundLocationUpdate = args[Keys.useBackgroundActivitySessionManager] as? Bool {
+            Store.useBackgroundActivitySessionManager = useBackgroundLocationUpdate
+        }
+        if let distanceFilter = args[Keys.distanceFilter] as? Double {
             Store.distanceFilter = distanceFilter
         }
-        if let interval = args["interval"] as? Int {
+        if let interval = args[Keys.interval] as? Int {
             Store.interval = interval
         }
     }
 
     private func start() {
+        // 複数回startが呼ばれる場合があるので、明示的にstopする
+        // リソースの開放などが主なので、重たい処理ではない
+        stop()
+        
         locationManager = CLLocationManager()
         locationManager?.delegate = self
         locationManager?.desiredAccuracy = kCLLocationAccuracyBest  // BestForNavigationも検討中
-        locationManager?.distanceFilter = Store.distanceFilter
-        updateInterval = TimeInterval(Store.interval)
         locationManager?.allowsBackgroundLocationUpdates = true
         locationManager?.pausesLocationUpdatesAutomatically = false
 
-        activateLocationWatching()
+        // 保存されたデータの適用
+        locationManager?.distanceFilter = Store.distanceFilter
+        updateInterval = TimeInterval(Store.interval)
+        
+        
+        if #available(iOS 18.0, *), Store.useCLLocationUpdate {
+            // 複数ループを防ぐ
+            updateTask?.cancel()
+            updateTask = Task { [weak self] in
+                defer {
+                    self?.updateTask = nil
+                }
+                for try await update in CLLocationUpdate.liveUpdates() {
+                    // セッションを張る
+                    let _ = CLServiceSession(authorization: .always)
+                    
+                    guard let self = self else { return }
+                    if Task.isCancelled {
+                        break
+                    }
+                    guard let location = update.location else { continue }
+                    self.onUpdate(location)
+                }
+            }
+        } else {
+            locationManager?.startUpdatingLocation()
+        }
+        locationManager?.startMonitoringSignificantLocationChanges()
+        
+        if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
+            BackgroundActivitySessionManager.activate()
+        }
+        
+        Store.isActivated = true
 
         debugPrint("Start location fetching")
     }
 
     private func stop() {
-        inactivateLocationWatching()
-
+        // for CLLocationUpdate
+        updateTask?.cancel()
+        updateTask = nil
+        
+        locationManager?.stopUpdatingLocation()
+        locationManager?.stopMonitoringSignificantLocationChanges()
         locationManager = nil
-
+       
         if #available(iOS 17.0, *) {
             BackgroundActivitySessionManager.invalidate()
         }
-
-        debugPrint("Stop location fetching")
-    }
-
-    private func activateLocationWatching() {
-        Store.isActivated = true
-
-        if #available(iOS 18.0, *), Store.useCLServiceSession {
-            let _ = CLServiceSession(authorization: .always)
-
-            Task {
-                for try await update in CLLocationUpdate.liveUpdates() {
-                    if !Store.isActivated {
-                        break
-                    }
-                    guard let location = update.location else { continue }
-                    onUpdate(location)
-                }
-            }
-
-        } else {
-            locationManager?.startUpdatingLocation()
-        }
-
-        locationManager?.startMonitoringSignificantLocationChanges()
-    }
-
-    private func inactivateLocationWatching() {
+        
         Store.isActivated = false
 
-        if #available(iOS 18.0, *) {
-            // checking in liveUpdates loop by Store.isActivated
-        } else {
-            locationManager?.stopUpdatingLocation()
-        }
-
-        locationManager?.stopMonitoringSignificantLocationChanges()
+        debugPrint("Stop location fetching")
     }
 
     public func applicationDidEnterBackground(_ application: UIApplication) {
         guard Store.isActivated else { return }
 
-        activateLocationWatching()
-
-        if #available(iOS 17.0, *) {
+        if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
             BackgroundActivitySessionManager.activate()
         }
     }
@@ -171,7 +181,9 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
     public func applicationWillTerminate(_ application: UIApplication) {
         guard Store.isActivated else { return }
 
-        activateLocationWatching()
+        // このアプリはterminatedな状態でも位置情報が必要
+        // 明示的に再スタートする
+        start()
     }
 
     public func applicationWillEnterForeground(_ application: UIApplication) {
