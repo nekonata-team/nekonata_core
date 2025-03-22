@@ -126,10 +126,10 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, CLLocationM
                 defer {
                     self?.updateTask = nil
                 }
+                // セッションを張る
+                let _ = CLServiceSession(authorization: .always)
+                
                 for try await update in CLLocationUpdate.liveUpdates() {
-                    // セッションを張る
-                    let _ = CLServiceSession(authorization: .always)
-                    
                     guard let self = self else { return }
                     if Task.isCancelled {
                         break
