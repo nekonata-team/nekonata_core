@@ -2,7 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nekonata_location_fetcher/model.dart';
+import 'package:nekonata_location_fetcher/model/configuration.dart';
+import 'package:nekonata_location_fetcher/model/location.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_platform_interface.dart';
 
 class _Keys {
@@ -78,6 +79,14 @@ class MethodChannelNekonataLocationFetcher
   @override
   Future<bool> get isActivated async {
     return await methodChannel.invokeMethod<bool>('isActivated') ?? false;
+  }
+
+  @override
+  Future<Configuration> get configuration async {
+    final json = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'configuration',
+    );
+    return Configuration.fromJson(json!);
   }
 
   @override

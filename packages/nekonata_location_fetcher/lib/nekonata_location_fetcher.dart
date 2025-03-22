@@ -1,4 +1,5 @@
-import 'package:nekonata_location_fetcher/model.dart';
+import 'package:nekonata_location_fetcher/model/configuration.dart';
+import 'package:nekonata_location_fetcher/model/location.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_platform_interface.dart';
 
 /// A base class for [NekonataLocationFetcher].
@@ -20,6 +21,9 @@ class NekonataLocationFetcher extends NekonataLocationFetcherPlatform {
 
   @override
   Future<bool> get isActivated async => _platform.isActivated;
+
+  @override
+  Future<Configuration> get configuration async => _platform.configuration;
 
   @override
   Future<void> configure({

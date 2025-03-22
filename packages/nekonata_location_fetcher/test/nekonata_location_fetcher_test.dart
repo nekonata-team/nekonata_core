@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nekonata_location_fetcher/model.dart';
+import 'package:nekonata_location_fetcher/model/configuration.dart';
+import 'package:nekonata_location_fetcher/model/location.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_method_channel.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_platform_interface.dart';
@@ -26,6 +27,11 @@ class MockNekonataLocationFetcherPlatform
   @override
   Future<bool> get isActivated async {
     return false;
+  }
+
+  @override
+  Future<Configuration> get configuration async {
+    return const Configuration(distanceFilter: 10, interval: 10);
   }
 
   @override

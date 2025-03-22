@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:nekonata_location_fetcher/model.dart';
+import 'package:nekonata_location_fetcher/model/configuration.dart';
+import 'package:nekonata_location_fetcher/model/location.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -121,6 +122,21 @@ class HomePage extends StatelessWidget {
               child: const Text('Stop'),
             ),
             ElevatedButton(
+              onPressed: () async {
+                final config = await fetcher.configuration;
+
+                if (!context.mounted) return;
+
+                showDialog(
+                  context: context,
+                  builder: (_) {
+                    return ConfigurationDialog(config: config);
+                  },
+                );
+              },
+              child: const Text('Get Configuration'),
+            ),
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -134,6 +150,50 @@ class HomePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ConfigurationDialog extends StatelessWidget {
+  const ConfigurationDialog({super.key, required this.config});
+
+  final Configuration config;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Configuration'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Distance Filter'),
+            subtitle: Text(config.distanceFilter.toString()),
+          ),
+          ListTile(
+            title: const Text('Interval'),
+            subtitle: Text(config.interval.toString()),
+          ),
+          ListTile(
+            title: const Text('Use CLLocation Update'),
+            subtitle: Text(config.useCLLocationUpdate.toString()),
+          ),
+          ListTile(
+            title: const Text('Use Background Activity Session Manager'),
+            subtitle: Text(
+              config.useBackgroundActivitySessionManager.toString(),
+            ),
+          ),
+          ListTile(
+            title: const Text('Notification Title'),
+            subtitle: Text(config.notificationTitle.toString()),
+          ),
+          ListTile(
+            title: const Text('Notification Text'),
+            subtitle: Text(config.notificationText.toString()),
+          ),
+        ],
       ),
     );
   }

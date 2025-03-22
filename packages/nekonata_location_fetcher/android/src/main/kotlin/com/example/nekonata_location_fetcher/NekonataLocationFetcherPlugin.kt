@@ -57,8 +57,16 @@ class NekonataLocationFetcherPlugin: FlutterPlugin, MethodCallHandler {
         stop()
         result.success(null)
       }
-      "isActivated" -> {
+      Store.KEY_IS_ACTIVATED -> {
         result.success(Store.isActivated)
+      }
+      "configuration" -> {
+        result.success(mapOf(
+          Store.KEY_NOTIFICATION_TITLE to Store.notificationTitle,
+          Store.KEY_NOTIFICATION_TEXT to Store.notificationText,
+          Store.KEY_DISTANCE_FILTER to Store.distanceFilter,
+          Store.KEY_INTERVAL to Store.interval
+        ))
       }
       else -> {
         result.notImplemented()

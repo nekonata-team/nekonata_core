@@ -60,8 +60,15 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
             case "stop":
                 self.stop()
                 result(nil)
-            case "isActivated":
+            case Keys.isActivated:
                 result(Store.isActivated)
+            case "configuration":
+                result([
+                    Keys.useCLLocationUpdate: Store.useCLLocationUpdate,
+                    Keys.useBackgroundActivitySessionManager: Store.useBackgroundActivitySessionManager,
+                    Keys.distanceFilter: Store.distanceFilter,
+                    Keys.interval: Store.interval,
+                ])
             default:
                 result(FlutterMethodNotImplemented)
             }

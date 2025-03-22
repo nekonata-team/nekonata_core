@@ -9,7 +9,7 @@ object Store {
 
     // プラットフォーム間のKeyとして扱っているので、変更する際は十分に注意すること
     // 便宜上、prefsに保存する際のKeyと同名にしている
-    private const val KEY_IS_ACTIVATED = "isActivated"
+    const val KEY_IS_ACTIVATED = "isActivated"
     const val KEY_RAW_HANDLE = "rawHandle"
     const val KEY_DISPATCHER_RAW_HANDLE = "dispatcherRawHandle"
     const val KEY_NOTIFICATION_TITLE = "notificationTitle"

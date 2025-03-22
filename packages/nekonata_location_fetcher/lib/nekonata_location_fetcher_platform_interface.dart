@@ -1,4 +1,5 @@
-import 'package:nekonata_location_fetcher/model.dart';
+import 'package:nekonata_location_fetcher/model/configuration.dart';
+import 'package:nekonata_location_fetcher/model/location.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -48,6 +49,11 @@ abstract class NekonataLocationFetcherPlatform extends PlatformInterface {
   /// Returns whether the location fetcher is activated.
   Future<bool> get isActivated async {
     throw UnimplementedError('isActivated has not been implemented.');
+  }
+
+  /// Returns the current configuration.
+  Future<Configuration> get configuration async {
+    throw UnimplementedError('configuration has not been implemented.');
   }
 
   /// Configures the location fetcher.
