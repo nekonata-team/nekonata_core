@@ -31,9 +31,14 @@ class NekonataMapViewFactory: NSObject, FlutterPlatformViewFactory {
 class NekonataMapView: NSObject, FlutterPlatformView {
     private var mapView: MKMapView
     private var channel: FlutterMethodChannel
+    
+    private var initialCoordinates: CLLocationCoordinate2D?
 
     private var regionDidChangeWorkItem: DispatchWorkItem?
     private var preZoomLevel: Double?
+    
+    private var baseDistance: Double = 0
+    private var setUpFinished: Bool = false
 
     init(
         frame: CGRect,
@@ -57,10 +62,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
             let latitude = dict["latitude"] as? CLLocationDegrees,
             let longitude = dict["longitude"] as? CLLocationDegrees
         {
-            let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-            let region = MKCoordinateRegion(
-                center: coordinate, latitudinalMeters: 1000, longitudinalMeters: 1000)
-            mapView.setRegion(region, animated: false)
+            initialCoordinates = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         }
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleMapTap(_:)))
         tapGesture.delegate = self
@@ -177,8 +179,6 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         
-        // 基準ズームレベル2.0での距離（赤道での値）
-        let baseDistance: CLLocationDistance = 30146491.038424034
         // ズームレベルに応じた距離（赤道での理想値）
         let unadjustedDistance = baseDistance / pow(2, zoom - 2)
         
@@ -249,6 +249,31 @@ class NekonataMapView: NSObject, FlutterPlatformView {
 }
 
 extension NekonataMapView: MKMapViewDelegate {
+    func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
+        guard !setUpFinished else { return }
+        
+        let baseCoordinate = CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        mapView.setCenter(baseCoordinate, zoomLevel: 2, animated: false)
+        
+        if #available(iOS 13.0, *) {
+            baseDistance = mapView.camera.centerCoordinateDistance
+        } else {
+            baseDistance = mapView.camera.altitude
+        }
+        
+//        debugPrint(baseDistance)
+        
+        if let coordinate = initialCoordinates {
+            let region = MKCoordinateRegion(
+                center: coordinate, latitudinalMeters: 1000, longitudinalMeters: 1000)
+            mapView.setRegion(region, animated: false)
+        }
+        
+        setUpFinished = true
+        
+        channel.invokeMethod("onMapReady", arguments: nil)
+    }
+    
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard let annotation = annotation as? Annotation else {
             return nil

@@ -118,6 +118,10 @@ internal class NekonataMapView(
                 ),
             )
         }
+
+        channel.invokeMethod(
+            "onMapReady", null
+        )
     }
 
 

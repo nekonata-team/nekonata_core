@@ -77,7 +77,7 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Nekonata Map')),
+      // appBar: AppBar(title: const Text('Nekonata Map')),
       body: NekonataMap(
         latLng: const LatLng(35.681236, 139.767125),
         onControllerCreated: (controller) {

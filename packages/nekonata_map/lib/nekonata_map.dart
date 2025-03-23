@@ -55,13 +55,13 @@ class NekonataMap extends StatelessWidget {
       return UiKitView(
         viewType: 'nekonata_map',
         onPlatformViewCreated: (id) {
-          final controller = NekonataMapController._(
+          NekonataMapController._(
             id,
+            onControllerCreated: onControllerCreated,
             onMarkerTapped: onMarkerTapped,
             onMapTapped: onMapTapped,
             onZoomEnd: onZoomEnd,
           );
-          onControllerCreated?.call(controller);
         },
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -70,13 +70,13 @@ class NekonataMap extends StatelessWidget {
     return AndroidView(
       viewType: 'nekonata_map',
       onPlatformViewCreated: (id) {
-        final controller = NekonataMapController._(
+        NekonataMapController._(
           id,
+          onControllerCreated: onControllerCreated,
           onMarkerTapped: onMarkerTapped,
           onMapTapped: onMapTapped,
           onZoomEnd: onZoomEnd,
         );
-        onControllerCreated?.call(controller);
       },
       creationParams: creationParams,
       creationParamsCodec: const StandardMessageCodec(),
@@ -91,12 +91,15 @@ class NekonataMap extends StatelessWidget {
 class NekonataMapController {
   NekonataMapController._(
     int id, {
+    OnControllerCreated? onControllerCreated,
     OnMarkerTapped? onMarkerTapped,
     OnMapTapped? onMapTapped,
     OnZoomEnd? onZoomEnd,
   }) : _channel = MethodChannel('nekonata_map_$id') {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
+        case 'onMapReady':
+          onControllerCreated?.call(this);
         case 'onMarkerTapped':
           onMarkerTapped?.call(call.arguments as String);
         case 'onMapTapped':
