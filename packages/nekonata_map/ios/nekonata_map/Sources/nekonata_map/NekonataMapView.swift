@@ -68,7 +68,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         mapView.addGestureRecognizer(tapGesture)
 
         // state setup
-        preZoomLevel = getZoomLevel(for: mapView)
+        preZoomLevel = zoomLevel()
     }
 
     func view() -> UIView {
@@ -97,7 +97,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
                 self.setRegion(call)
                 result(nil)
             case "zoom":
-                result(self.getZoomLevel(for: self.mapView))
+                result(self.zoomLevel())
             default:
                 result(FlutterMethodNotImplemented)
             }
@@ -165,29 +165,44 @@ class NekonataMapView: NSObject, FlutterPlatformView {
             }
         }
     }
-
+    
     func moveCamera(_ call: FlutterMethodCall) {
-        guard let args = call.arguments as? [String: Any]
-        else {
-            return
-        }
-
+        guard let args = call.arguments as? [String: Any] else { return }
+        
         let current = mapView.camera
-
         let latitude = args["latitude"] as? Double ?? current.centerCoordinate.latitude
         let longitude = args["longitude"] as? Double ?? current.centerCoordinate.longitude
-
-        let zoom = args["zoom"] as? Double
-        let altitude = zoom.map(convertToAltitude) ?? current.altitude
-
+        let zoom = args["zoom"] as? Double ?? zoomLevel()
         let heading = args["heading"] as? Double ?? current.heading
-
+        
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        let camera = MKMapCamera(
-            lookingAtCenter: coordinate, fromDistance: altitude, pitch: 0, heading: heading)
+        
+        // 基準ズームレベル2.0での距離（赤道での値）
+        let baseDistance: CLLocationDistance = 30146491.038424034
+        // ズームレベルに応じた距離（赤道での理想値）
+        let unadjustedDistance = baseDistance / pow(2, zoom - 2)
+        
+        // 中心座標の緯度による補正
+        let latFactor = cos(coordinate.latitude * .pi / 180)
+        let targetDistanceWithLatitude = unadjustedDistance * latFactor
+        
+        // 画面回転によるバウンディングボックスの補正
+        // fromDistanceは見える範囲に影響しているらしく、回転時には見える範囲が変わるため係数を掛ける必要がある
+        let mapSize = mapView.bounds.size
+        let originalWidth = Double(mapSize.width)
+        let originalHeight = Double(mapSize.height)
+        let angle = heading * .pi / 180.0
+        let rotatedWidth = abs(cos(angle)) * originalWidth + abs(sin(angle)) * originalHeight
+        let correctionFactor = originalWidth / rotatedWidth
+        let adjustedDistance = targetDistanceWithLatitude * correctionFactor
+        
+        let camera = MKMapCamera(lookingAtCenter: coordinate,
+                                 fromDistance: adjustedDistance,
+                                 pitch: current.pitch,
+                                 heading: heading)
         mapView.setCamera(camera, animated: true)
     }
-
+    
     func setRegion(_ call: FlutterMethodCall) {
         guard let args = call.arguments as? [String: Any],
             let minLat = args["minLatitude"] as? Double,
@@ -224,15 +239,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         return mapView.annotations.compactMap({ $0 as? Annotation }).first(where: { $0.id == id })
     }
 
-    func convertToAltitude(_ zoom: Double) -> Double {
-        // zoom 0 時の高度
-        let altitudeAtZoom0 = 591657550.5
-        // 緯度による補正
-        let altitude = altitudeAtZoom0 / pow(2, zoom)
-        return altitude
-    }
-
-    func getZoomLevel(for mapView: MKMapView) -> Double {
+    func zoomLevel() -> Double {
         let longitudeDelta = mapView.region.span.longitudeDelta
         let zoomLevel = log2(360 / longitudeDelta)
         // 小数第一位まで
@@ -272,10 +279,14 @@ extension NekonataMapView: MKMapViewDelegate {
 
         let workItem = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
-            let zoomLevel = self.getZoomLevel(for: mapView)
+            let zoomLevel = self.zoomLevel()
             if preZoomLevel != zoomLevel {
                 self.channel.invokeMethod("onZoomEnd", arguments: zoomLevel)
                 preZoomLevel = zoomLevel
+                
+//                if #available(iOS 13.0, *) {
+//                    debugPrint(mapView.camera.centerCoordinateDistance)
+//                }
             }
         }
 
@@ -312,4 +323,14 @@ extension NekonataMapView {
         ]
         channel.invokeMethod("onMapTapped", arguments: arguments)
     }
+}
+
+extension MKMapView {
+   func setCenter(_ coordinate: CLLocationCoordinate2D, zoomLevel: Double, animated: Bool) {
+       // ズームレベルに基づいて緯度デルタを計算
+       let span = MKCoordinateSpan(latitudeDelta: 360 / pow(2, zoomLevel),
+                                   longitudeDelta: 360 / pow(2, zoomLevel))
+       let region = MKCoordinateRegion(center: coordinate, span: span)
+       setRegion(region, animated: animated)
+   }
 }

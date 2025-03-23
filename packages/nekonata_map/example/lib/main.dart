@@ -98,7 +98,6 @@ class _MapPageState extends State<MapPage> {
           },
           icon: Icon(Icons.refresh),
         ),
-        IconButton(onPressed: _clearMarkers, icon: Icon(Icons.clear)),
         IconButton(
           onPressed: () {
             final latDelta = 0.01 * (rnd.nextDouble() - 0.5);
@@ -134,6 +133,20 @@ class _MapPageState extends State<MapPage> {
             _controller.setMarkerVisible("3", isVisible: isVisible);
           },
           icon: Icon(Icons.opacity),
+        ),
+        IconButton(
+          onPressed: () async {
+            final zoom = await _controller.zoom;
+            _controller.moveCamera(zoom: zoom + 1);
+          },
+          icon: Icon(Icons.zoom_in),
+        ),
+        IconButton(
+          onPressed: () async {
+            final zoom = await _controller.zoom;
+            _controller.moveCamera(zoom: zoom - 1);
+          },
+          icon: Icon(Icons.zoom_out),
         ),
       ],
     );
