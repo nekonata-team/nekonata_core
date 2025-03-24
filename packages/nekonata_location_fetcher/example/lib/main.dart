@@ -1,11 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:nekonata_location_fetcher/model/configuration.dart';
 import 'package:nekonata_location_fetcher/model/location.dart';
 import 'package:nekonata_location_fetcher/nekonata_location_fetcher.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+part 'main.g.dart';
 
 @pragma('vm:entry-point')
 void _callback(Location location) {
@@ -20,9 +24,24 @@ void _callback(Location location) {
   });
 }
 
+@riverpod
+NekonataLocationFetcher _locationFetcher(Ref ref) {
+  return NekonataLocationFetcher();
+}
+
+@riverpod
+Future<bool> _suppressBackgroundLocationAccess(Ref ref) async {
+  final fetcher = ref.watch(_locationFetcherProvider);
+  final config = await fetcher.configuration;
+  final background = config.useBackgroundActivitySessionManager ?? true;
+  final session = config.useCLLocationUpdate ?? true;
+
+  return !background && !session;
+}
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(ProviderScope(child: const MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -33,37 +52,19 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final fetcher = NekonataLocationFetcher();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await fetcher.setCallback(_callback);
-      await fetcher.configure(
-        distanceFilter: 10,
-        interval: 5,
-        notificationTitle: 'Nekonata Location Fetcher',
-        notificationText: 'Fetching location data. This is customized text.',
-      );
-
-      debugPrint('Configured');
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: HomePage(fetcher: fetcher));
+    return MaterialApp(home: HomePage());
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key, required this.fetcher});
-
-  final NekonataLocationFetcher fetcher;
+class HomePage extends ConsumerWidget {
+  const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fetcher = ref.watch(_locationFetcherProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Plugin example app')),
       body: Center(
@@ -111,6 +112,14 @@ class HomePage extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () async {
+                await fetcher.setCallback(_callback);
+                await fetcher.configure(
+                  distanceFilter: 10,
+                  interval: 5,
+                  notificationTitle: 'Nekonata Location Fetcher',
+                  notificationText:
+                      'Fetching location data. This is customized text.',
+                );
                 await fetcher.start();
               },
               child: const Text('Start'),
@@ -148,6 +157,8 @@ class HomePage extends StatelessWidget {
               },
               child: const Text('Log'),
             ),
+            if (Platform.isIOS)
+              const SuppressBackgroundLocationAccessSwitchListTile(),
           ],
         ),
       ),
@@ -247,5 +258,38 @@ class _LogPageState extends State<LogPage> {
         child: const Icon(Icons.delete),
       ),
     );
+  }
+}
+
+class SuppressBackgroundLocationAccessSwitchListTile extends ConsumerWidget {
+  const SuppressBackgroundLocationAccessSwitchListTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SwitchListTile(
+      title: Text("Suppress Background Location Access"),
+      secondary: const Icon(Icons.my_location_outlined),
+      onChanged: (value) async {
+        await _switch(value, ref);
+      },
+      value:
+          ref.watch(_suppressBackgroundLocationAccessProvider).value ?? false,
+    );
+  }
+
+  Future<void> _switch(bool suppress, WidgetRef ref) async {
+    // 基本的に、useBackgroundActivitySessionManagerと
+    // useCLLocationUpdateは高精度になるので逆の値を指定する
+    final fetcher = ref.read(_locationFetcherProvider);
+
+    await fetcher.configure(
+      useBackgroundActivitySessionManager: !suppress,
+      useCLLocationUpdate: !suppress,
+    );
+    ref.invalidate(_suppressBackgroundLocationAccessProvider);
+    // restart
+    if (await fetcher.isActivated) {
+      await fetcher.start();
+    }
   }
 }

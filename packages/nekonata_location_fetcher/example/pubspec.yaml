@@ -17,6 +17,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_hooks: ^0.21.2
+  hooks_riverpod: ^2.6.1
   nekonata_location_fetcher:
     # When depending on this package from a real application you should use:
     #   nekonata_location_fetcher: ^x.y.z
@@ -25,6 +27,7 @@ dependencies:
     # the parent directory to use the current plugin's version.
     path: ../
   permission_handler: ^11.4.0
+  riverpod_annotation: ^2.6.1
   shared_preferences: ^2.5.2
 
 dev_dependencies:
@@ -39,6 +42,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  riverpod_generator: ^2.6.5
+  build_runner: ^2.4.15
+  custom_lint: ^0.7.5
+  riverpod_lint: ^2.6.5
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

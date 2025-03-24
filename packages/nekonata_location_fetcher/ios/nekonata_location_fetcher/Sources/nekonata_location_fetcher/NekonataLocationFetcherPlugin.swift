@@ -3,7 +3,7 @@ import Flutter
 import UIKit
 
 @available(iOS 13.0, *)
-public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
+public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFetcherDelegate {
     /// GeneratedPluginRegistrantを呼び出すために、AppDelegate側で指定する想定
     /// これにより、Dart側のcallbackで任意のライブラリのAPIを呼び出す事ができるようになる
     public static var onDispatched: ((FlutterEngine) -> Void)?
@@ -11,13 +11,28 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
     private lazy var flutterEngine = FlutterEngine(
         name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
     private var channel: FlutterMethodChannel?
+    
+    private var isDispatched: Bool = false
 
     private var locationManager: CLLocationManager?
     private var lastUpdateTimestamp: TimeInterval = 0
     private var updateInterval: TimeInterval = 5
     private var updateWorkItem: DispatchWorkItem?
     
-    private var updateTask: Task<Void, Error>?
+    
+    private var locationFetcher: LocationFetcher {
+        if _locationFetcher == nil {
+            if #available(iOS 18.0, *), Store.useCLLocationUpdate {
+                _locationFetcher = CLLocationUpdateFetcher()
+            } else {
+                _locationFetcher = CLLocationManagerFetcher()
+            }
+            _locationFetcher?.delegate = self
+        }
+        return _locationFetcher!
+    }
+    private var _locationFetcher: LocationFetcher?
+
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = NekonataLocationFetcherPlugin()
@@ -85,6 +100,9 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
 
         Store.rawHandle = rawHandle
         Store.dispatcherRawHandle = dispatcherRawHandle
+        
+        dispatch()
+        
         debugPrint("Set callback successfully")
     }
 
@@ -111,43 +129,10 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
 
     private func start() {
         // 複数回startが呼ばれる場合があるので、明示的にstopする
-        // リソースの開放などが主なので、重たい処理ではない
+        // リソースの開放などが主なので、重たい処理ではない想定
         stop()
         
-        locationManager = CLLocationManager()
-        locationManager?.delegate = self
-        locationManager?.desiredAccuracy = kCLLocationAccuracyBest  // BestForNavigationも検討中
-        locationManager?.allowsBackgroundLocationUpdates = true
-        locationManager?.pausesLocationUpdatesAutomatically = false
-
-        // 保存されたデータの適用
-        locationManager?.distanceFilter = Store.distanceFilter
-        updateInterval = TimeInterval(Store.interval)
-        
-        
-        if #available(iOS 18.0, *), Store.useCLLocationUpdate {
-            // 複数ループを防ぐ
-            updateTask?.cancel()
-            updateTask = Task { [weak self] in
-                defer {
-                    self?.updateTask = nil
-                }
-                // セッションを張る
-                let _ = CLServiceSession(authorization: .always)
-                
-                for try await update in CLLocationUpdate.liveUpdates() {
-                    guard let self = self else { return }
-                    if Task.isCancelled {
-                        break
-                    }
-                    guard let location = update.location else { continue }
-                    self.onUpdate(location)
-                }
-            }
-        } else {
-            locationManager?.startUpdatingLocation()
-        }
-        locationManager?.startMonitoringSignificantLocationChanges()
+        locationFetcher.start()
         
         if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
             BackgroundActivitySessionManager.activate()
@@ -159,14 +144,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
     }
 
     private func stop() {
-        // for CLLocationUpdate
-        updateTask?.cancel()
-        updateTask = nil
+        locationFetcher.stop()
         
-        locationManager?.stopUpdatingLocation()
-        locationManager?.stopMonitoringSignificantLocationChanges()
-        locationManager = nil
-       
         if #available(iOS 17.0, *) {
             BackgroundActivitySessionManager.invalidate()
         }
@@ -175,8 +154,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
 
         debugPrint("Stop location fetching")
     }
-
-    private func onUpdate(_ location: CLLocation) {
+    
+    func locationFetcher(_ fetcher: any LocationFetcher, didUpdateLocation location: CLLocation) {
         // debugPrint("called", location.coordinate.longitude, location.coordinate.latitude)
 
         // throttle like Android FusedLocationProviderClient.setInterval
@@ -222,23 +201,21 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin {
             self?.channel?.invokeMethod("callback", arguments: json)
         }
     }
-}
+    
+    /// Dart側のコールバックを呼び出し、callbackが呼ばれるようにする関数
+    /// Dart側の_callbackを参照
+    private func dispatch() {
+        if let info = FlutterCallbackCache.lookupCallbackInformation(
+            Int64(Store.dispatcherRawHandle)), !isDispatched
+        {
+            flutterEngine.run(
+                withEntrypoint: info.callbackName, libraryURI: info.callbackLibraryPath)
 
-
-@available(iOS 13.0, *)
-extension NekonataLocationFetcherPlugin: CLLocationManagerDelegate {
-    public func locationManager(
-        _ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]
-    ) {
-
-        guard let location = locations.last else { return }
-        onUpdate(location)
-    }
-
-    public func locationManager(
-        _ manager: CLLocationManager, didFailWithError error: Error
-    ) {
-        debugPrint("Failed to find user's location: \(error.localizedDescription)")
+            Self.onDispatched?(flutterEngine)
+            isDispatched = true
+        } else {
+            debugPrint("Dispatcher not found")
+        }
     }
 }
 
@@ -271,22 +248,12 @@ extension NekonataLocationFetcherPlugin {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
     ) -> Bool {
-        if let info = FlutterCallbackCache.lookupCallbackInformation(
-            Int64(Store.dispatcherRawHandle))
-        {
-
-            flutterEngine.run(
-                withEntrypoint: info.callbackName, libraryURI: info.callbackLibraryPath)
-
-            Self.onDispatched?(flutterEngine)
-
-            if channel != nil {
-                channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
-            }
-        } else {
-            debugPrint("Dispatcher not found")
+        if channel != nil {
+            channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
         }
-
+        
+        dispatch()
+        
         UIDevice.current.isBatteryMonitoringEnabled = true
 
         if Store.isActivated {

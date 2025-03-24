@@ -21,27 +21,29 @@ class _Keys {
   static const notificationText = 'notificationText';
 }
 
+const _channel = MethodChannel('nekonata_location_fetcher');
+
 @pragma('vm:entry-point')
 void _callback() {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('Despatcher was called');
-  const MethodChannel('nekonata_location_fetcher').setMethodCallHandler((
-    call,
-  ) async {
-    switch (call.method) {
-      case _Keys.callback:
-        final json = call.arguments as Map<dynamic, dynamic>;
-        final handle = json[_Keys.rawHandle] as int;
-        final location = Location.fromJson(json);
+  _channel.setMethodCallHandler(_handler);
+}
 
-        final callback = PluginUtilities.getCallbackFromHandle(
-          CallbackHandle.fromRawHandle(handle),
-        );
-        if (callback is void Function(Location)) {
-          callback(location);
-        }
-    }
-  });
+Future<dynamic> _handler(MethodCall call) async {
+  switch (call.method) {
+    case _Keys.callback:
+      final json = call.arguments as Map<dynamic, dynamic>;
+      final handle = json[_Keys.rawHandle] as int;
+      final location = Location.fromJson(json);
+
+      final callback = PluginUtilities.getCallbackFromHandle(
+        CallbackHandle.fromRawHandle(handle),
+      );
+      if (callback is void Function(Location)) {
+        callback(location);
+      }
+  }
 }
 
 /// An implementation of [NekonataLocationFetcherPlatform] that uses method channels.
