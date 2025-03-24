@@ -132,6 +132,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         // リソースの開放などが主なので、重たい処理ではない想定
         stop()
         
+        updateInterval = TimeInterval(Store.interval)
         locationFetcher.start()
         
         if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
