@@ -19,7 +19,12 @@ READMEはできるだけ簡潔に書く
 
 ### 新規プロジェクト作成時
 
-1. Flutterのコマンドで作成
+1. fvmのセットアップ
+
+    トップレベルのディレクトリで以下のコマンドを実行
+    `fvm use`
+
+2. Flutterのコマンドで作成
 
     ```bash
     cd packages
@@ -32,7 +37,7 @@ READMEはできるだけ簡潔に書く
     flutter create -t plugin --platforms=ios,android nekonata_<package name>
     ```
 
-2. 各パッケージの`pubspec.yaml`に`resolution: workspace`を追加
+3. 各パッケージの`pubspec.yaml`に`resolution: workspace`を追加
 
     ```yaml
     name: nekonata_map
@@ -43,7 +48,7 @@ READMEはできるだけ簡潔に書く
     resolution: workspace
     ```
 
-3. ルートの`pubspec.yaml`に各パッケージを追加
+4. ルートの`pubspec.yaml`に各パッケージを追加
 
     ```yaml
     workspace:

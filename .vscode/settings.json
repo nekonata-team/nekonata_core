@@ -1,34 +1,35 @@
 {
-    "cSpell.words": [
-        "nekonata",
-        "prefs",
-        "pubspec"
+  "cSpell.words": [
+    "nekonata",
+    "prefs",
+    "pubspec"
+  ],
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "pubspec.yaml": ".packages, .metadata, pubspec.lock",
+    "*.dart": "$(capture).g.dart, $(capture).freezed.dart, $(capture).gr.dart",
+    "*.feature": "$(capture)_test.dart"
+  },
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "quickfix.insertSemicolon": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [
+      80
     ],
-    "explorer.fileNesting.enabled": true,
-    "explorer.fileNesting.expand": false,
-    "explorer.fileNesting.patterns": {
-        "pubspec.yaml": ".packages, .metadata, pubspec.lock",
-        "*.dart": "$(capture).g.dart, $(capture).freezed.dart, $(capture).gr.dart",
-        "*.feature": "$(capture)_test.dart"
-    },
-    "[dart]": {
-        "editor.formatOnSave": true,
-        "editor.formatOnType": true,
-        "editor.codeActionsOnSave": {
-            "source.fixAll": "explicit",
-            "quickfix.insertSemicolon": "explicit",
-            "source.organizeImports": "explicit"
-        },
-        "editor.rulers": [
-            80
-        ],
-        "editor.selectionHighlight": false,
-        "editor.suggestSelection": "first",
-        "editor.tabCompletion": "onlySnippets",
-        "editor.wordBasedSuggestions": "off"
-    },
-    "[swift]": {
-        "editor.formatOnSave": true,
-        "editor.formatOnType": true,
-    }
+    "editor.selectionHighlight": false,
+    "editor.suggestSelection": "first",
+    "editor.tabCompletion": "onlySnippets",
+    "editor.wordBasedSuggestions": "off"
+  },
+  "[swift]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+  },
+  "dart.flutterSdkPath": ".fvm/versions/3.29.2"
 }
