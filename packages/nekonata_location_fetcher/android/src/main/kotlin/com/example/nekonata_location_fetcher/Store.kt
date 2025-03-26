@@ -1,55 +1,69 @@
 package com.example.nekonata_location_fetcher
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+private val Context.dataStore by preferencesDataStore(name = "nekonata_location_fetcher_data_store")
+
+val KEY_IS_ACTIVATED = booleanPreferencesKey("isActivated")
+val KEY_RAW_HANDLE = longPreferencesKey("rawHandle")
+val KEY_DISPATCHER_RAW_HANDLE = longPreferencesKey("dispatcherRawHandle")
+val KEY_NOTIFICATION_TITLE = stringPreferencesKey("notificationTitle")
+val KEY_NOTIFICATION_TEXT = stringPreferencesKey("notificationText")
+val KEY_DISTANCE_FILTER = floatPreferencesKey("distanceFilter")
+val KEY_INTERVAL = longPreferencesKey("interval")
 
 object Store {
-    private const val PREFS_NAME = "store_prefs"
 
-    // プラットフォーム間のKeyとして扱っているので、変更する際は十分に注意すること
-    // 便宜上、prefsに保存する際のKeyと同名にしている
-    const val KEY_IS_ACTIVATED = "isActivated"
-    const val KEY_RAW_HANDLE = "rawHandle"
-    const val KEY_DISPATCHER_RAW_HANDLE = "dispatcherRawHandle"
-    const val KEY_NOTIFICATION_TITLE = "notificationTitle"
-    const val KEY_NOTIFICATION_TEXT = "notificationText"
-    const val KEY_DISTANCE_FILTER = "distanceFilter"
-    const val KEY_INTERVAL = "interval"
-
-    private lateinit var prefs: SharedPreferences
-
-    fun init(context: Context) {
-        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    suspend fun setValue(context: Context, key: Preferences.Key<*>, value: Any) {
+        context.dataStore.edit { settings ->
+            when (value) {
+                is Long -> settings[key as Preferences.Key<Long>] = value
+                is Boolean -> settings[key as Preferences.Key<Boolean>] = value
+                is String -> settings[key as Preferences.Key<String>] = value
+                is Float -> settings[key as Preferences.Key<Float>] = value
+            }
+        }
     }
 
-    var rawHandle: Long
-        get() = prefs.getLong(KEY_RAW_HANDLE, 0)
-        set(value) = prefs.edit { putLong(KEY_RAW_HANDLE, value) }
+    fun <T> getValue(context: Context, key: Preferences.Key<T>, defaultValue: T): Flow<T> {
+        return context.dataStore.data.map { preferences ->
+            preferences[key] ?: defaultValue
+        }
+    }
 
-    var dispatcherRawHandle: Long
-        get() = prefs.getLong(KEY_DISPATCHER_RAW_HANDLE, 0)
-        set(value) = prefs.edit { putLong(KEY_DISPATCHER_RAW_HANDLE, value) }
+    fun getIsActive(context: Context): Flow<Boolean> {
+        return getValue(context, KEY_IS_ACTIVATED, false)
+    }
 
-    var isActivated: Boolean
-        get() = prefs.getBoolean(KEY_IS_ACTIVATED, false)
-        set(value) = prefs.edit { putBoolean(KEY_IS_ACTIVATED, value) }
+    fun getRawHandle(context: Context): Flow<Long> {
+        return getValue(context, KEY_RAW_HANDLE, 0)
+    }
 
-    var notificationTitle: String
-        get() = prefs.getString(KEY_NOTIFICATION_TITLE, "Location Tracking")!!
-        set(value) = prefs.edit { putString(KEY_NOTIFICATION_TITLE, value) }
+    fun getDispatcherRawHandle(context: Context): Flow<Long> {
+        return getValue(context, KEY_DISPATCHER_RAW_HANDLE, 0)
+    }
 
-    var notificationText: String
-        get() = prefs.getString(KEY_NOTIFICATION_TEXT, "Getting location updates...")!!
-        set(value) = prefs.edit { putString(KEY_NOTIFICATION_TEXT, value) }
+    fun getNotificationTitle(context: Context): Flow<String> {
+        return getValue(context, KEY_NOTIFICATION_TITLE, "Location Service")
+    }
 
-    var distanceFilter: Float
-        get() = prefs.getFloat(KEY_DISTANCE_FILTER, 10f)
-        set(value) = prefs.edit { putFloat(KEY_DISTANCE_FILTER, value) }
+    fun getNotificationText(context: Context): Flow<String> {
+        return getValue(context, KEY_NOTIFICATION_TEXT, "Tracking location")
+    }
 
-    var interval: Long
-        get() = prefs.getLong(KEY_INTERVAL, 5)
-        set(value) = prefs.edit { putLong(KEY_INTERVAL, value) }
+    fun getDistanceFilter(context: Context): Flow<Float> {
+        return getValue(context, KEY_DISTANCE_FILTER, 10f)
+    }
 
-    val intervalMillis: Long get() = interval * 1000
+    fun getInterval(context: Context): Flow<Long> {
+        return getValue(context, KEY_INTERVAL, 5)
+    }
+
+    fun getIntervalMillis(context: Context): Flow<Long> {
+        return getInterval(context).map { it * 1000 }
+    }
 }

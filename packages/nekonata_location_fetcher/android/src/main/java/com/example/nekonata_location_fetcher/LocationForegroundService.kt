@@ -1,28 +1,37 @@
 package com.example.nekonata_location_fetcher
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.BatteryManager
 import android.os.Build
-import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.google.android.gms.location.*
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.embedding.engine.loader.FlutterLoader
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.FlutterCallbackInformation
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-class LocationForegroundService : Service() {
+class LocationForegroundService : LifecycleService() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationRequest: LocationRequest
-    private lateinit var locationCallback: LocationCallback
-
     private lateinit var flutterEngine: FlutterEngine
+    private lateinit var locationCallback: LocationCallback
 
     companion object {
         const val CHANNEL_ID = "location_service_channel"
@@ -36,17 +45,17 @@ class LocationForegroundService : Service() {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, Store.intervalMillis)
-            .setMinUpdateDistanceMeters(Store.distanceFilter)
-            .build()
-
         val flutterLoader = FlutterLoader().apply {
             startInitialization(this@LocationForegroundService)
             ensureInitializationComplete(this@LocationForegroundService, null)
         }
         flutterEngine = FlutterEngine(this)
 
-        val callbackInfo = FlutterCallbackInformation.lookupCallbackInformation(Store.dispatcherRawHandle)
+        val dispatcherRawHandle =
+            runBlocking { Store.getDispatcherRawHandle(this@LocationForegroundService).first() }
+
+        val callbackInfo =
+            FlutterCallbackInformation.lookupCallbackInformation(dispatcherRawHandle)
         if (callbackInfo != null) {
             flutterEngine.dartExecutor.executeDartCallback(
                 DartExecutor.DartCallback(
@@ -57,7 +66,11 @@ class LocationForegroundService : Service() {
             )
         }
 
-        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nekonata_location_fetcher")
+
+        val channel =
+            MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nekonata_location_fetcher")
+        val rawHandle = runBlocking { Store.getRawHandle(this@LocationForegroundService).first() }
+
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation
@@ -66,7 +79,7 @@ class LocationForegroundService : Service() {
                 if (location != null) {
                     channel.invokeMethod(
                         "callback", mapOf(
-                            "rawHandle" to Store.rawHandle,
+                            "rawHandle" to rawHandle,
                             "latitude" to location.latitude,
                             "longitude" to location.longitude,
                             "speed" to location.speed,
@@ -78,38 +91,64 @@ class LocationForegroundService : Service() {
                 }
             }
         }
+
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+        val notification = runBlocking { createNotification() }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION) }
-        else {
-            startForeground(1, createNotification())
+            startForeground(
+                1,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
+        } else {
+            startForeground(1, notification)
         }
 
-        requestLocationUpdates()
+        lifecycleScope.launch {
+            requestLocationUpdates()
+        }
 
         return START_STICKY
     }
 
-    private fun requestLocationUpdates() {
+    private suspend fun requestLocationUpdates() {
         try {
-            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, mainLooper)
+            val intervalMills = Store.getIntervalMillis(this@LocationForegroundService).first()
+            val distanceFilter = Store.getDistanceFilter(this@LocationForegroundService).first()
+
+            val locationRequest =
+                LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMills)
+                    .setMinUpdateDistanceMeters(distanceFilter)
+                    .build()
+
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                mainLooper
+            )
         } catch (e: SecurityException) {
             Log.e("LocationService", "Location permission not granted", e)
         }
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(CHANNEL_ID, "Location Service", NotificationManager.IMPORTANCE_DEFAULT)
-        val notificationManager = getSystemService(NotificationManager::class.java) as NotificationManager
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Location Service",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val notificationManager =
+            getSystemService(NotificationManager::class.java) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun createNotification(): Notification {
+    private suspend fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(Store.notificationTitle)
-            .setContentText(Store.notificationText)
+            .setContentTitle(Store.getNotificationTitle(this@LocationForegroundService).first())
+            .setContentText(Store.getNotificationText(this@LocationForegroundService).first())
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .build()
     }
@@ -119,8 +158,6 @@ class LocationForegroundService : Service() {
         val batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         return batteryLevel
     }
-
-    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         super.onDestroy()

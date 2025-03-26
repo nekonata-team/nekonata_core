@@ -4,13 +4,16 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import io.flutter.Log
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("BootReceiver", "Received intent: ${intent.action}")
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            Store.init(context)
-            if (Permission.hasLocationPermission(context) && Store.isActivated) {
+            val isActive = runBlocking { Store.getIsActive(context).first() }
+            if (Permission.hasLocationPermission(context) && isActive) {
                 val serviceIntent = Intent(context, LocationForegroundService::class.java)
                 context.startForegroundService(serviceIntent)
             } else {
