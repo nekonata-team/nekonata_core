@@ -7,7 +7,7 @@ class CLLocationUpdateFetcher: LocationFetcher {
     
     // 最後に通知した位置情報を保持
     // CLLocationUpdateにはdistanceFilterがないため、距離を算出してエミュレートする
-    private var lastReportedLocation: CLLocation?
+    private var lastLocation: CLLocation?
     
     func start() {
         let distanceFilter = Store.distanceFilter
@@ -20,17 +20,11 @@ class CLLocationUpdateFetcher: LocationFetcher {
             for try await update in CLLocationUpdate.liveUpdates() {
                 guard let self = self else { return }
                 guard let location = update.location else { continue }
-                
-                // 以前の位置情報がある場合、移動距離をチェック
-                if let lastLocation = self.lastReportedLocation {
-                    let distance = location.distance(from: lastLocation)
-                    if distance < distanceFilter {
-                        continue
-                    }
+               
+                // 距離を確認して、しきい値を超える場合はupdateを呼ぶ
+                if self.isOverOrNil(location, distanceFilter) {
+                    self.update(location)
                 }
-                
-                self.lastReportedLocation = location
-                self.delegate?.locationFetcher(self, didUpdateLocation: location)
             }
         }
     }
@@ -38,6 +32,15 @@ class CLLocationUpdateFetcher: LocationFetcher {
     func stop() {
         updateTask?.cancel()
         updateTask = nil
-        lastReportedLocation = nil
+        lastLocation = nil
+    }
+
+    private func isOverOrNil(_ location: CLLocation, _ distanceFilter: Double) -> Bool {
+        self.lastLocation == nil || location.distance(from: self.lastLocation!) >= distanceFilter
+    }
+    
+    private func update(_ location: CLLocation) {
+        self.lastLocation = location
+        self.delegate?.locationFetcher(self, didUpdateLocation: location)
     }
 }
