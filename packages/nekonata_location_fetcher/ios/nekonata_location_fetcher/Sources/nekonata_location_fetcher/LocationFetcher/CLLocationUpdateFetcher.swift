@@ -16,6 +16,9 @@ class CLLocationUpdateFetcher: LocationFetcher {
         updateTask = Task { [weak self] in
             defer { self?.stop() }
             
+            // セッションを張るか張らないかで挙動がかなり変わる
+            // .alwaysをリクエストすると、アプリがkillされても動く仕組み？
+            // バグの可能性もあるため、慎重に検討する
             let _ = CLServiceSession(authorization: .always)
             for try await update in CLLocationUpdate.liveUpdates() {
                 guard let self = self else { return }

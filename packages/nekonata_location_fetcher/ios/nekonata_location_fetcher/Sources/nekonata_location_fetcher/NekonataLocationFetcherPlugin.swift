@@ -13,8 +13,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
     private var channel: FlutterMethodChannel?
     
     private var isDispatched: Bool = false
-
-    private var locationManager: CLLocationManager?
     private var lastUpdateTimestamp: TimeInterval = 0
     private var updateInterval: TimeInterval = 5
     private var updateWorkItem: DispatchWorkItem?
@@ -23,8 +21,12 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
     private var locationFetcher: LocationFetcher {
         if _locationFetcher == nil {
             if #available(iOS 18.0, *), Store.useCLLocationUpdate {
-                _locationFetcher = CLLocationUpdateFetcher()
+//                debugPrint("Use CLLocationUpdateFetcher")
+//                _locationFetcher = CLLocationUpdateFetcher()
+                debugPrint("Use HybridFetcher")
+                _locationFetcher = HybridFetcher()
             } else {
+                debugPrint("Use CLLocationManagerFetcher")
                 _locationFetcher = CLLocationManagerFetcher()
             }
             _locationFetcher?.delegate = self
@@ -128,10 +130,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
     }
 
     private func start() {
-        // 複数回startが呼ばれる場合があるので、明示的にstopする
-        // リソースの開放などが主なので、重たい処理ではない想定
-        stop()
-        
         updateInterval = TimeInterval(Store.interval)
         locationFetcher.start()
         
