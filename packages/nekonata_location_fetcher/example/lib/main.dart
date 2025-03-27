@@ -11,17 +11,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 part 'main.g.dart';
 
+const _locationKey = 'locations';
+final _prefs = SharedPreferencesAsync();
+
 @pragma('vm:entry-point')
-void _callback(Location location) {
-  SharedPreferences.getInstance().then((prefs) {
-    final locations = prefs.getStringList('locations') ?? [];
-    locations.add(location.toString());
-    if (locations.length > 100) {
-      locations.removeRange(0, locations.length - 100);
-    }
-    prefs.setStringList('locations', locations);
-    debugPrint('Location was updated');
-  });
+Future<void> _callback(Location location) async {
+  final locations = await _prefs.getStringList(_locationKey) ?? [];
+  locations.add(location.toString());
+  if (locations.length > 100) {
+    locations.removeRange(0, locations.length - 100);
+  }
+  await _prefs.setStringList(_locationKey, locations);
+  debugPrint('Location was updated');
 }
 
 @riverpod
@@ -231,9 +232,7 @@ class _LogPageState extends State<LogPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Log')),
       body: FutureBuilder<List<String>>(
-        future: SharedPreferences.getInstance().then((prefs) {
-          return prefs.getStringList('locations') ?? [];
-        }),
+        future: _prefs.getStringList(_locationKey).then((value) => value ?? []),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -250,10 +249,8 @@ class _LogPageState extends State<LogPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          SharedPreferences.getInstance().then((prefs) {
-            prefs.setStringList('locations', []);
-          });
+        onPressed: () async {
+          await _prefs.setStringList(_locationKey, []);
         },
         child: const Icon(Icons.delete),
       ),
