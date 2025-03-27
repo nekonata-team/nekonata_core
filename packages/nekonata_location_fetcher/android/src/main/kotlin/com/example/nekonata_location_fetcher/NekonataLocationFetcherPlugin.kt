@@ -121,6 +121,7 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
         Store.setValue(context, KEY_DISPATCHER_RAW_HANDLE, dispatcherHandle)
         Store.setValue(context, KEY_RAW_HANDLE, handle)
 
+        restart()
     }
 
     private suspend fun configure(call: MethodCall) {
@@ -133,9 +134,13 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
         call.argument<Int>(KEY_INTERVAL.name)
             ?.let { Store.setValue(context, KEY_INTERVAL, it.toLong()) }
 
-        val isActivated = Store.getIsActive(context).first()
+        restart()
+    }
+
+    private suspend fun restart() {
+        val wasActivated = Store.getIsActive(context).first()
         stop()
-        if (isActivated) {
+        if (wasActivated) {
             start()
         }
     }

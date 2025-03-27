@@ -145,10 +145,14 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
             Store.interval = interval
         }
         
-        let isActivated = Store.isActivated
+        restart()
+    }
+    
+    private func restart() {
+        let wasActivated = Store.isActivated
         stop()
         _locationFetcher = nil
-        if isActivated {
+        if wasActivated {
             start()
         }
     }

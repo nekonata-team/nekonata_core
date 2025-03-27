@@ -30,8 +30,12 @@ import kotlinx.coroutines.runBlocking
 class LocationForegroundService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var flutterEngine: FlutterEngine
     private lateinit var locationCallback: LocationCallback
+
+    private lateinit var flutterEngine: FlutterEngine
+    private lateinit var channel: MethodChannel
+
+    private var isDispatched = false
 
     companion object {
         const val CHANNEL_ID = "nekonata_location_fetcher_channel"
@@ -42,33 +46,9 @@ class LocationForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-        val flutterLoader = FlutterLoader().apply {
-            startInitialization(this@LocationForegroundService)
-            ensureInitializationComplete(this@LocationForegroundService, null)
-        }
         flutterEngine = FlutterEngine(this)
-
-        val dispatcherRawHandle =
-            runBlocking { Store.getDispatcherRawHandle(this@LocationForegroundService).first() }
-
-        val callbackInfo =
-            FlutterCallbackInformation.lookupCallbackInformation(dispatcherRawHandle)
-        if (callbackInfo != null) {
-            flutterEngine.dartExecutor.executeDartCallback(
-                DartExecutor.DartCallback(
-                    assets,
-                    flutterLoader.findAppBundlePath(),
-                    callbackInfo
-                )
-            )
-        }
-
-
-        val channel =
+        channel =
             MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nekonata_location_fetcher")
-        val rawHandle = runBlocking { Store.getRawHandle(this@LocationForegroundService).first() }
-
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation
@@ -77,7 +57,7 @@ class LocationForegroundService : Service() {
                 if (location != null) {
                     channel.invokeMethod(
                         "callback", mapOf(
-                            "rawHandle" to rawHandle,
+                            "rawHandle" to runBlocking { Store.getRawHandle(this@LocationForegroundService).first() },
                             "latitude" to location.latitude,
                             "longitude" to location.longitude,
                             "speed" to location.speed,
@@ -94,6 +74,7 @@ class LocationForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
 
+        dispatch()
         createNotificationChannel()
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -122,6 +103,33 @@ class LocationForegroundService : Service() {
         }
 
         return START_STICKY
+    }
+
+    private fun dispatch() {
+        if (isDispatched) return
+
+        val dispatcherRawHandle =
+            runBlocking { Store.getDispatcherRawHandle(this@LocationForegroundService).first() }
+
+        val callbackInfo =
+            FlutterCallbackInformation.lookupCallbackInformation(dispatcherRawHandle)
+        if (callbackInfo != null) {
+            val flutterLoader = FlutterLoader().apply {
+                startInitialization(this@LocationForegroundService)
+                ensureInitializationComplete(this@LocationForegroundService, null)
+            }
+            flutterEngine.dartExecutor.executeDartCallback(
+                DartExecutor.DartCallback(
+                    assets,
+                    flutterLoader.findAppBundlePath(),
+                    callbackInfo
+                )
+            )
+            isDispatched = true
+            Log.d(TAG, "Flutter engine dispatched")
+        } else {
+            Log.e(TAG, "Dispatcher raw handle not found")
+        }
     }
 
     private suspend fun requestLocationUpdates() {
