@@ -14,7 +14,7 @@ class _Keys {
   static const rawHandle = 'rawHandle';
   static const distanceFilter = 'distanceFilter';
   static const interval = 'interval';
-  static const useCLLocationUpdate = 'useCLLocationUpdate';
+  static const mode = 'mode';
   static const useBackgroundActivitySessionManager =
       'useBackgroundActivitySessionManager';
   static const notificationTitle = 'notificationTitle';
@@ -95,7 +95,7 @@ class MethodChannelNekonataLocationFetcher
   Future<void> configure({
     double? distanceFilter,
     int? interval,
-    bool? useCLLocationUpdate,
+    Mode? mode,
     bool? useBackgroundActivitySessionManager,
     String? notificationTitle,
     String? notificationText,
@@ -103,7 +103,7 @@ class MethodChannelNekonataLocationFetcher
     await methodChannel.invokeMethod<void>('configure', {
       _Keys.distanceFilter: distanceFilter,
       _Keys.interval: interval,
-      _Keys.useCLLocationUpdate: useCLLocationUpdate,
+      _Keys.mode: mode?.name,
       _Keys.useBackgroundActivitySessionManager:
           useBackgroundActivitySessionManager,
       _Keys.notificationTitle: notificationTitle,

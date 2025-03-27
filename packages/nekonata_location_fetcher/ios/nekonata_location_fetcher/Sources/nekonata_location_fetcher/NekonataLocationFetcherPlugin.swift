@@ -20,13 +20,24 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
     
     private var locationFetcher: LocationFetcher {
         if _locationFetcher == nil {
-            if #available(iOS 18.0, *), Store.useCLLocationUpdate {
-//                debugPrint("Use CLLocationUpdateFetcher")
-//                _locationFetcher = CLLocationUpdateFetcher()
-                debugPrint("Use HybridFetcher")
-                _locationFetcher = HybridFetcher()
+            let mode = Mode(rawValue: Store.mode) ?? Mode.hybrid
+            
+            if #available(iOS 18.0, *) {
+                switch (mode) {
+                case .hybrid:
+                    debugPrint("Use HybridFetcher")
+                    _locationFetcher = HybridFetcher()
+                case .locationManager:
+                    debugPrint("Use CLLocationManagerFetcher")
+                    _locationFetcher = CLLocationManagerFetcher()
+                case .locationUpdate:
+                    debugPrint("Use LocationUpdateFetcher")
+                    _locationFetcher = CLLocationUpdateFetcher()
+                }
+
             } else {
-                debugPrint("Use CLLocationManagerFetcher")
+                // Fallback
+                debugPrint("Fallback. Use CLLocationManagerFetcher")
                 _locationFetcher = CLLocationManagerFetcher()
             }
             _locationFetcher?.delegate = self
@@ -81,7 +92,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
                 result(Store.isActivated)
             case "configuration":
                 result([
-                    Keys.useCLLocationUpdate: Store.useCLLocationUpdate,
+                    Keys.mode: Store.mode,
                     Keys.useBackgroundActivitySessionManager: Store.useBackgroundActivitySessionManager,
                     Keys.distanceFilter: Store.distanceFilter,
                     Keys.interval: Store.interval,
@@ -115,11 +126,17 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
             )
         }
 
-        if let useCLLocationUpdate = args[Keys.useCLLocationUpdate] as? Bool {
-            Store.useCLLocationUpdate = useCLLocationUpdate
+        if let mode = args[Keys.mode] as? String {
+            if let _ = Mode(rawValue: mode) {
+                Store.mode = mode
+            } else {
+                throw NSError(
+                    domain: "Invalid arguments", code: 0, userInfo: nil
+                )
+            }
         }
-        if let useBackgroundLocationUpdate = args[Keys.useBackgroundActivitySessionManager] as? Bool {
-            Store.useBackgroundActivitySessionManager = useBackgroundLocationUpdate
+        if let useBackgroundActivitySessionManager = args[Keys.useBackgroundActivitySessionManager] as? Bool {
+            Store.useBackgroundActivitySessionManager = useBackgroundActivitySessionManager
         }
         if let distanceFilter = args[Keys.distanceFilter] as? Double {
             Store.distanceFilter = distanceFilter
@@ -127,13 +144,20 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         if let interval = args[Keys.interval] as? Int {
             Store.interval = interval
         }
+        
+        let isActivated = Store.isActivated
+        stop()
+        _locationFetcher = nil
+        if isActivated {
+            start()
+        }
     }
 
     private func start() {
         updateInterval = TimeInterval(Store.interval)
         locationFetcher.start()
         
-        if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
+        if #available(iOS 17.0, *) {
             BackgroundActivitySessionManager.activate()
         }
         
@@ -227,7 +251,7 @@ extension NekonataLocationFetcherPlugin {
     public func applicationDidEnterBackground(_ application: UIApplication) {
         guard Store.isActivated else { return }
 
-        if #available(iOS 17.0, *), Store.useBackgroundActivitySessionManager {
+        if #available(iOS 17.0, *) {
             BackgroundActivitySessionManager.activate()
         }
     }

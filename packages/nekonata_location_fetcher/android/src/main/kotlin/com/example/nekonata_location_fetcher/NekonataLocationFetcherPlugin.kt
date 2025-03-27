@@ -132,6 +132,12 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
             ?.let { Store.setValue(context, KEY_DISTANCE_FILTER, it.toFloat()) }
         call.argument<Int>(KEY_INTERVAL.name)
             ?.let { Store.setValue(context, KEY_INTERVAL, it.toLong()) }
+
+        val isActivated = Store.getIsActive(context).first()
+        stop()
+        if (isActivated) {
+            start()
+        }
     }
 
     private suspend fun start() {

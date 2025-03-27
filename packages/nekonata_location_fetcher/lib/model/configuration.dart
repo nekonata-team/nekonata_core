@@ -8,7 +8,7 @@ class Configuration {
   const Configuration({
     required this.distanceFilter,
     required this.interval,
-    this.useCLLocationUpdate,
+    this.mode,
     this.useBackgroundActivitySessionManager,
     this.notificationTitle,
     this.notificationText,
@@ -21,7 +21,13 @@ class Configuration {
     return Configuration(
       distanceFilter: json['distanceFilter'] as double,
       interval: json['interval'] as int,
-      useCLLocationUpdate: json['useCLLocationUpdate'] as bool?,
+      mode:
+          (json['mode'] as String?) != null
+              ? Mode.values.firstWhere(
+                (e) => e.name == json['mode'],
+                orElse: () => Mode.hybrid,
+              )
+              : null,
       useBackgroundActivitySessionManager:
           json['useBackgroundActivitySessionManager'] as bool?,
       notificationTitle: json['notificationTitle'] as String?,
@@ -36,7 +42,7 @@ class Configuration {
   final int interval;
 
   /// Whether to use CLLocationUpdate. Only available on iOS.
-  final bool? useCLLocationUpdate;
+  final Mode? mode;
 
   /// Whether to use BackgroundActivitySessionManager. Only available on iOS.
   final bool? useBackgroundActivitySessionManager;
@@ -46,4 +52,28 @@ class Configuration {
 
   /// The text of the notification. Only available on Android.
   final String? notificationText;
+}
+
+/// The mode for [Configuration].
+enum Mode {
+  /// Use CLLocationUpdate
+  /// and CLLocationManager.startMonitoringSignificantLocationChanges.
+  ///
+  /// This mode is for iOS 18.0 and later.
+  /// This is the default mode.
+  hybrid,
+
+  /// Use CLLocationManager.startMonitoringSignificantLocationChanges. and
+  /// CLLocationManager.startUpdatingLocation.
+  ///
+  /// If terminated, the location will be only updated
+  /// by CLLocationManager.startMonitoringSignificantLocationChanges.
+  /// This mode is fallback.
+  locationManager,
+
+  /// Use CLLocationUpdate without break.
+  ///
+  /// This will be needed more battery.
+  /// This mode is for iOS 18.0 and later.
+  locationUpdate,
 }

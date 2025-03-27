@@ -52,7 +52,7 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
                 guard let self = self else { return }
                 guard let location = update.location else { continue }
                 
-                debugPrint(location)
+//                debugPrint(location)
                
                 if update.stationary {
                     debugPrint("Stationary")

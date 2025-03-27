@@ -29,14 +29,14 @@ class NekonataLocationFetcher extends NekonataLocationFetcherPlatform {
   Future<void> configure({
     double? distanceFilter,
     int? interval,
-    bool? useCLLocationUpdate,
+    Mode? mode,
     bool? useBackgroundActivitySessionManager,
     String? notificationTitle,
     String? notificationText,
   }) => _platform.configure(
     distanceFilter: distanceFilter,
     interval: interval,
-    useCLLocationUpdate: useCLLocationUpdate,
+    mode: mode,
     useBackgroundActivitySessionManager: useBackgroundActivitySessionManager,
     notificationTitle: notificationTitle,
     notificationText: notificationText,

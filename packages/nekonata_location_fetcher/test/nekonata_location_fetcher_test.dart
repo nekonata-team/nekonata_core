@@ -38,7 +38,7 @@ class MockNekonataLocationFetcherPlatform
   Future<void> configure({
     double? distanceFilter,
     int? interval,
-    bool? useCLLocationUpdate,
+    Mode? mode,
     bool? useBackgroundActivitySessionManager,
     String? notificationTitle,
     String? notificationText,

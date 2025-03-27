@@ -35,9 +35,9 @@ Future<bool> _suppressBackgroundLocationAccess(Ref ref) async {
   final fetcher = ref.watch(_locationFetcherProvider);
   final config = await fetcher.configuration;
   final background = config.useBackgroundActivitySessionManager ?? true;
-  final session = config.useCLLocationUpdate ?? true;
+  final mode = config.mode;
 
-  return !background && !session;
+  return mode == Mode.locationManager && !background;
 }
 
 void main() {
@@ -188,8 +188,8 @@ class ConfigurationDialog extends StatelessWidget {
             subtitle: Text(config.interval.toString()),
           ),
           ListTile(
-            title: const Text('Use CLLocation Update'),
-            subtitle: Text(config.useCLLocationUpdate.toString()),
+            title: const Text('Mode'),
+            subtitle: Text(config.mode.toString()),
           ),
           ListTile(
             title: const Text('Use Background Activity Session Manager'),
@@ -281,12 +281,8 @@ class SuppressBackgroundLocationAccessSwitchListTile extends ConsumerWidget {
 
     await fetcher.configure(
       useBackgroundActivitySessionManager: !suppress,
-      useCLLocationUpdate: !suppress,
+      mode: suppress ? Mode.locationManager : Mode.hybrid,
     );
     ref.invalidate(_suppressBackgroundLocationAccessProvider);
-    // restart
-    if (await fetcher.isActivated) {
-      await fetcher.start();
-    }
   }
 }

@@ -4,10 +4,16 @@ struct Keys {
     static let rawHandle = "rawHandle"
     static let dispatcherRawHandle = "dispatcherRawHandle"
     static let isActivated = "isActivated"
-    static let useCLLocationUpdate = "useCLLocationUpdate"
+    static let mode = "mode"
     static let useBackgroundActivitySessionManager = "useBackgroundActivitySessionManager"
     static let distanceFilter: String = "distanceFilter"
     static let interval: String = "interval"
+}
+
+enum Mode: String {
+    case hybrid
+    case locationManager
+    case locationUpdate
 }
 
 @propertyWrapper
@@ -35,8 +41,8 @@ internal class Store {
     @UserDefault(key: Keys.isActivated, defaultValue: false)
     public static var isActivated: Bool
 
-    @UserDefault(key: Keys.useCLLocationUpdate, defaultValue: true)
-    public static var useCLLocationUpdate: Bool
+    @UserDefault(key: Keys.mode, defaultValue: "hybrid")
+    public static var mode: String
     
     @UserDefault(key: Keys.useBackgroundActivitySessionManager, defaultValue: true)
     public static var useBackgroundActivitySessionManager: Bool

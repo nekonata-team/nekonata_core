@@ -5,9 +5,12 @@ class BackgroundActivitySessionManager {
     static private var backgroundActivitySession: CLBackgroundActivitySession?
 
     public static func activate() {
-        debugPrint("Activated background session")
         invalidate()
-        backgroundActivitySession = CLBackgroundActivitySession()
+        
+        if Store.useBackgroundActivitySessionManager {
+            debugPrint("Activated background session")
+            backgroundActivitySession = CLBackgroundActivitySession()
+        }
     }
 
     public static func invalidate() {
