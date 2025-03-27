@@ -198,8 +198,11 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         ]
 
         DispatchQueue.main.async { [weak self] in
-            // debugPrint("notify callback", location.coordinate.longitude, location.coordinate.latitude)
-            self?.channel?.invokeMethod("callback", arguments: json)
+            guard let self = self, let channel = self.channel else {
+                debugPrint("Channel is nil, cannot invoke callback")
+                return
+            }
+            channel.invokeMethod("callback", arguments: json)
         }
     }
     
@@ -249,11 +252,9 @@ extension NekonataLocationFetcherPlugin {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
     ) -> Bool {
-        if channel != nil {
-            channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
-        }
-        
         dispatch()
+        
+        channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
         
         UIDevice.current.isBatteryMonitoringEnabled = true
 
