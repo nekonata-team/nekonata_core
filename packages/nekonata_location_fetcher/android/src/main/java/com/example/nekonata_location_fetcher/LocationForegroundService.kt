@@ -1,48 +1,46 @@
 package com.example.nekonata_location_fetcher
 
+import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.BatteryManager
 import android.os.Build
-import android.util.Log
+import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import io.flutter.Log
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.embedding.engine.loader.FlutterLoader
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.FlutterCallbackInformation
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-class LocationForegroundService : LifecycleService() {
+class LocationForegroundService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var flutterEngine: FlutterEngine
     private lateinit var locationCallback: LocationCallback
 
     companion object {
-        const val CHANNEL_ID = "location_service_channel"
+        const val CHANNEL_ID = "nekonata_location_fetcher_channel"
+        const val NOTIFICATION_ID = 100
     }
 
 
     override fun onCreate() {
         super.onCreate()
-
-        createNotificationChannel()
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         val flutterLoader = FlutterLoader().apply {
@@ -93,22 +91,34 @@ class LocationForegroundService : LifecycleService() {
         }
 
     }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        val notification = runBlocking { createNotification() }
+
+        createNotificationChannel()
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Starting service...")
+            .setContentText("Initializing...")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .build()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                1,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-            )
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } else {
-            startForeground(1, notification)
+            startForeground(NOTIFICATION_ID, notification)
         }
 
-        lifecycleScope.launch {
+        // 非同期で通知を更新
+        runBlocking {
+            val updatedNotification = createNotification()
+            val notificationManager = getSystemService(NotificationManager::class.java) as NotificationManager
+            notificationManager.notify(NOTIFICATION_ID, updatedNotification)
+            Log.d(TAG, "Notification updated")
+        }
+
+        runBlocking {
             requestLocationUpdates()
+            Log.d(TAG, "Location updates requested")
         }
 
         return START_STICKY
@@ -130,19 +140,21 @@ class LocationForegroundService : LifecycleService() {
                 mainLooper
             )
         } catch (e: SecurityException) {
-            Log.e("LocationService", "Location permission not granted", e)
+            Log.e(TAG, "Location permission not granted", e)
         }
     }
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Location Service",
+            "Nekonata Location Fetcher",
             NotificationManager.IMPORTANCE_DEFAULT
         )
         val notificationManager =
             getSystemService(NotificationManager::class.java) as NotificationManager
         notificationManager.createNotificationChannel(channel)
+
+        Log.d(TAG, "Notification channel created")
     }
 
     private suspend fun createNotification(): Notification {
@@ -159,9 +171,12 @@ class LocationForegroundService : LifecycleService() {
         return batteryLevel
     }
 
+    override fun onBind(intent: Intent?): IBinder? = null
+
     override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)
         flutterEngine.destroy()
+        Log.d(TAG, "LocationForegroundService was destroyed")
     }
 }

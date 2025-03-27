@@ -10,14 +10,15 @@ import kotlinx.coroutines.runBlocking
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("BootReceiver", "Received intent: ${intent.action}")
+        Log.d(TAG, "Received BootReceiver intent: ${intent.action}")
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             val isActive = runBlocking { Store.getIsActive(context).first() }
+            Log.d(TAG, "isActive: $isActive")
             if (Permission.hasLocationPermission(context) && isActive) {
                 val serviceIntent = Intent(context, LocationForegroundService::class.java)
                 context.startForegroundService(serviceIntent)
             } else {
-                Log.w("LocationService", "Location permission not granted")
+                Log.w(TAG, "Location permission not granted")
             }
         }
     }

@@ -14,6 +14,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+const val TAG = "NekonataLocationFetcherPlugin"
+
 /** NekonataLocationFetcherPlugin */
 class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
     /// The MethodChannel that will the communication between Flutter and native Android
@@ -133,14 +135,12 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private suspend fun start() {
-        stop()
-
         if (Permission.hasLocationPermission(context)) {
             val intent = Intent(context, LocationForegroundService::class.java)
             context.startForegroundService(intent)
         } else {
             Log.w(
-                "NekonataLocationFetcherPlugin",
+                TAG,
                 "Location permission is not granted. Cannot start service."
             )
         }
