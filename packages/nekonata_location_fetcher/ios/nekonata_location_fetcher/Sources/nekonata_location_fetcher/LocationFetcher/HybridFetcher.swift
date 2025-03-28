@@ -28,7 +28,10 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if updateTask == nil {
+            debugPrint(".didUpdateLocations")
             startLiveUpdates()
+        } else {
+            debugPrint(".didUpdateLocations: ignore")
         }
     }
 

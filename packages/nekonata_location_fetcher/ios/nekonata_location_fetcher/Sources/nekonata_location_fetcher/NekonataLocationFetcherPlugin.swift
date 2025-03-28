@@ -2,12 +2,16 @@ import CoreLocation
 import Flutter
 import UIKit
 
+
+@available(iOS 13.0, *)
+public class NekonataLocationFetcher {
+    static public let shared = NekonataLocationFetcherPlugin()
+    
+    private init() {}
+}
+
 @available(iOS 13.0, *)
 public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFetcherDelegate {
-    /// GeneratedPluginRegistrantを呼び出すために、AppDelegate側で指定する想定
-    /// これにより、Dart側のcallbackで任意のライブラリのAPIを呼び出す事ができるようになる
-    public static var onDispatched: ((FlutterEngine) -> Void)?
-
     private lazy var flutterEngine = FlutterEngine(
         name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
     private var channel: FlutterMethodChannel?
@@ -48,11 +52,10 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
 
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let instance = NekonataLocationFetcherPlugin()
-
+        let instance = NekonataLocationFetcher.shared
+        
         instance.channel = createChannel(binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(instance, channel: instance.channel!)
-        registrar.addApplicationDelegate(instance)
     }
     
     static func createChannel(binaryMessenger: FlutterBinaryMessenger) -> FlutterMethodChannel {
@@ -240,8 +243,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         {
             flutterEngine.run(
                 withEntrypoint: info.callbackName, libraryURI: info.callbackLibraryPath)
-
-            Self.onDispatched?(flutterEngine)
             isDispatched = true
         } else {
             debugPrint("Dispatcher not found")
@@ -250,6 +251,9 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
 }
 
 /// lifecycle
+/// registrar.addApplicationDelegate(instance)ができるのは知っているが、Flutterのmainまでトリガーしてしまう
+/// 今回はFlutterEngine自体をこちらで管理するため、addApplicationDelegateは使用せず
+/// AppDelegate側では、それぞれのlifecycleで以下の関数群を呼び出し、かつ、keys.contain(.location)をチェック後、return tureする設計にする
 @available(iOS 13.0, *)
 extension NekonataLocationFetcherPlugin {
     public func applicationDidEnterBackground(_ application: UIApplication) {
@@ -260,25 +264,17 @@ extension NekonataLocationFetcherPlugin {
         }
     }
 
-    public func applicationWillTerminate(_ application: UIApplication) {
-        guard Store.isActivated else { return }
-
-        // このアプリはterminatedな状態でも位置情報が必要
-        // 明示的に再スタートする
-        start()
-    }
-
     public func applicationWillEnterForeground(_ application: UIApplication) {
         if #available(iOS 17.0, *) {
             BackgroundActivitySessionManager.invalidate()
         }
     }
 
-    public func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
-    ) -> Bool {
+    public func initialize(
+        register: (FlutterEngine) -> Void
+    ) {
         dispatch()
+        register(flutterEngine)
         
         channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
         
@@ -287,8 +283,6 @@ extension NekonataLocationFetcherPlugin {
         if Store.isActivated {
             start()
         }
-
-        return true
     }
 
 }
