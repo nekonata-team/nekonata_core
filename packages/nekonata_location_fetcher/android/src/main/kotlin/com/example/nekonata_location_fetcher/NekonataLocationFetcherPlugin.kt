@@ -28,6 +28,7 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
     private val scope = CoroutineScope(Dispatchers.Main)
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        Log.d(TAG, "onAttachedToEngine called")
         context = flutterPluginBinding.applicationContext
 
         scope.launch {
@@ -41,6 +42,7 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        Log.d(TAG, "onDetachedFromEngine called")
         scope.cancel()
         channel.setMethodCallHandler(null)
     }
@@ -146,6 +148,7 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private suspend fun start() {
+        Log.d(TAG, "start called")
         if (Permission.hasLocationPermission(context)) {
             val intent = Intent(context, LocationForegroundService::class.java)
             context.startForegroundService(intent)
@@ -162,6 +165,7 @@ class NekonataLocationFetcherPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private suspend fun stop() {
+        Log.d(TAG, "stop called")
         val intent = Intent(context, LocationForegroundService::class.java)
         context.stopService(intent)
         Store.setValue(context, KEY_IS_ACTIVATED, false)
