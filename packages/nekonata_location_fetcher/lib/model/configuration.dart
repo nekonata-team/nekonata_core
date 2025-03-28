@@ -10,6 +10,7 @@ class Configuration {
     required this.interval,
     this.mode,
     this.useBackgroundActivitySessionManager,
+    this.hasLocationDidFinishLaunchingWithOptions,
     this.notificationTitle,
     this.notificationText,
   });
@@ -28,6 +29,8 @@ class Configuration {
                 orElse: () => Mode.hybrid,
               )
               : null,
+      hasLocationDidFinishLaunchingWithOptions:
+          json['hasLocationDidFinishLaunchingWithOptions'] as bool?,
       useBackgroundActivitySessionManager:
           json['useBackgroundActivitySessionManager'] as bool?,
       notificationTitle: json['notificationTitle'] as String?,
@@ -46,6 +49,10 @@ class Configuration {
 
   /// Whether to use BackgroundActivitySessionManager. Only available on iOS.
   final bool? useBackgroundActivitySessionManager;
+
+  /// Whether the location has been launched with didFinishLaunchingWithOptions.
+  /// Only available on iOS.
+  final bool? hasLocationDidFinishLaunchingWithOptions;
 
   /// The title of the notification. Only available on Android.
   final String? notificationTitle;

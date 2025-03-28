@@ -30,6 +30,22 @@ NekonataLocationFetcher _locationFetcher(Ref ref) {
   return NekonataLocationFetcher();
 }
 
+@Riverpod(keepAlive: true)
+class _IsLaunchedByBackgroundLocationTask
+    extends _$IsLaunchedByBackgroundLocationTask {
+  @override
+  Future<bool?> build() async {
+    return ref
+        .watch(_locationFetcherProvider)
+        .configuration
+        .then((config) => config.hasLocationDidFinishLaunchingWithOptions);
+  }
+
+  void relaunched() {
+    state = AsyncData(false);
+  }
+}
+
 @riverpod
 Future<bool> _suppressBackgroundLocationAccess(Ref ref) async {
   final fetcher = ref.watch(_locationFetcherProvider);
@@ -42,20 +58,50 @@ Future<bool> _suppressBackgroundLocationAccess(Ref ref) async {
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  debugPrint('🐱 Flutter main called');
   runApp(ProviderScope(child: const MyApp()));
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLaunchedByBackgroundLocationTask = ref.watch(
+      _isLaunchedByBackgroundLocationTaskProvider,
+    );
 
-class _MyAppState extends State<MyApp> {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(home: HomePage());
+    if (isLaunchedByBackgroundLocationTask.isLoading) {
+      return const MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
+    if (isLaunchedByBackgroundLocationTask.value == true) {
+      return MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Background Location Task'),
+                ElevatedButton(
+                  onPressed: () {
+                    ref
+                        .read(
+                          _isLaunchedByBackgroundLocationTaskProvider.notifier,
+                        )
+                        .relaunched();
+                  },
+                  child: Text('Relaunch'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } else {
+      return const MaterialApp(home: HomePage());
+    }
   }
 }
 
@@ -64,6 +110,7 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('🐱 HomePage was built');
     final fetcher = ref.watch(_locationFetcherProvider);
 
     return Scaffold(

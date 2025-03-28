@@ -8,7 +8,7 @@ class BackgroundActivitySessionManager {
         invalidate()
         
         if Store.useBackgroundActivitySessionManager {
-            debugPrint("Activated background session")
+            NSLog("🐱 Activated background session")
             backgroundActivitySession = CLBackgroundActivitySession()
         }
     }

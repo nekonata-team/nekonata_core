@@ -12,11 +12,11 @@ public class NekonataLocationFetcher {
 
 @available(iOS 13.0, *)
 public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFetcherDelegate {
-    private lazy var flutterEngine = FlutterEngine(
+    public var register: ((FlutterEngine) -> Void)?
+
+    private var flutterEngine = FlutterEngine(
         name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
     private var channel: FlutterMethodChannel?
-    
-    private var register: ((FlutterEngine) -> Void)?
     
     private var isDispatched: Bool = false
     private var lastUpdateTimestamp: TimeInterval = 0
@@ -56,8 +56,11 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = NekonataLocationFetcher.shared
         
+        NSLog("🐱 NekonataLocationFetcherPlugin register called")
+        
         instance.channel = createChannel(binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(instance, channel: instance.channel!)
+        registrar.addApplicationDelegate(instance)
     }
     
     static func createChannel(binaryMessenger: FlutterBinaryMessenger) -> FlutterMethodChannel {
@@ -99,6 +102,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
                 result([
                     Keys.mode: Store.mode,
                     Keys.useBackgroundActivitySessionManager: Store.useBackgroundActivitySessionManager,
+                    Keys.hasLocationDidFinishLaunchingWithOptions: Store.hasLocationDidFinishLaunchingWithOptions,
                     Keys.distanceFilter: Store.distanceFilter,
                     Keys.interval: Store.interval,
                 ])
@@ -121,7 +125,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         
         dispatch()
         
-        debugPrint("Set callback successfully")
+        NSLog("🐱 Set callback successfully")
     }
 
     private func configure(_ call: FlutterMethodCall) throws {
@@ -163,6 +167,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
     }
 
     private func start() {
+        dispatch()
+        
         updateInterval = TimeInterval(Store.interval)
         locationFetcher.start()
         
@@ -172,7 +178,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         
         Store.isActivated = true
 
-        debugPrint("Start location fetching")
+        NSLog("🐱 Start location fetching")
     }
 
     private func stop() {
@@ -184,7 +190,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         
         Store.isActivated = false
 
-        debugPrint("Stop location fetching")
+        NSLog("🐱 Stop location fetching")
     }
     
     func locationFetcher(_ fetcher: any LocationFetcher, didUpdateLocation location: CLLocation) {
@@ -249,37 +255,22 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
                 register(flutterEngine)
             }
             isDispatched = true
-        } else {
-            debugPrint("Dispatcher not found")
         }
     }
 }
 
 /// lifecycle
-/// registrar.addApplicationDelegate(instance)ができるのは知っているが、Flutterのmainまでトリガーしてしまう
-/// 今回はFlutterEngine自体をこちらで管理するため、addApplicationDelegateは使用せず
-/// AppDelegate側では、それぞれのlifecycleで以下の関数群を呼び出し、かつ、keys.contain(.location)をチェック後、return tureする設計にする
 @available(iOS 13.0, *)
 extension NekonataLocationFetcherPlugin {
-    public func applicationDidEnterBackground(_ application: UIApplication) {
-        guard Store.isActivated else { return }
-
-        if #available(iOS 17.0, *) {
-            BackgroundActivitySessionManager.activate()
+    public func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
+    ) -> Bool {
+        NSLog("🐱 NekonataLocationFetcherPlugin didFinishLaunchingWithOptions called. \(launchOptions)")
+        if let launchOptions = launchOptions as? [UIApplication.LaunchOptionsKey: Any] {
+            NSLog("🐱 launchOptions contains location: \(launchOptions[.location] != nil)")
+            Store.hasLocationDidFinishLaunchingWithOptions = launchOptions[.location] != nil
         }
-    }
-
-    public func applicationWillEnterForeground(_ application: UIApplication) {
-        if #available(iOS 17.0, *) {
-            BackgroundActivitySessionManager.invalidate()
-        }
-    }
-
-    public func initialize(
-        register: @escaping (FlutterEngine) -> Void
-    ) {
-        self.register = register
-        dispatch()
         
         channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
         
@@ -288,6 +279,7 @@ extension NekonataLocationFetcherPlugin {
         if Store.isActivated {
             start()
         }
+        
+        return true
     }
-
 }

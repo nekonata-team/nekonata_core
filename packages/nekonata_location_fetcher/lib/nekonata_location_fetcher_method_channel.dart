@@ -26,7 +26,7 @@ const _channel = MethodChannel('nekonata_location_fetcher');
 @pragma('vm:entry-point')
 void _callback() {
   WidgetsFlutterBinding.ensureInitialized();
-  debugPrint('Despatcher was called');
+  debugPrint('🐱 Despatcher was called');
   _channel.setMethodCallHandler(_handler);
 }
 
