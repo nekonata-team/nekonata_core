@@ -55,6 +55,12 @@ Future<dynamic> _androidHandler(MethodCall call) async {
 /// An implementation of [NekonataLocationFetcherPlatform] that uses method channels.
 class MethodChannelNekonataLocationFetcher
     extends NekonataLocationFetcherPlatform {
+  /// Constructs a [MethodChannelNekonataLocationFetcher].
+  MethodChannelNekonataLocationFetcher() {
+    if (Platform.isIOS) {
+      methodChannel.setMethodCallHandler(_iOSHandler);
+    }
+  }
   void Function(Location) _iOSCallback = (_) {};
 
   /// The method channel used to interact with the native platform.
@@ -65,7 +71,6 @@ class MethodChannelNekonataLocationFetcher
   /// That's because application:didFinishLaunchingWithOptions is called.
   /// So we don't need to use a callback dispatcher.
   Future<dynamic> _iOSHandler(MethodCall call) async {
-    debugPrint('🐱 MethodChannelNekonataLocationFetcher._handler: $call');
     switch (call.method) {
       case _Keys.callback:
         final json = call.arguments as Map<dynamic, dynamic>;
@@ -102,7 +107,6 @@ class MethodChannelNekonataLocationFetcher
       });
     } else {
       _iOSCallback = callback;
-      methodChannel.setMethodCallHandler(_iOSHandler);
     }
   }
 
