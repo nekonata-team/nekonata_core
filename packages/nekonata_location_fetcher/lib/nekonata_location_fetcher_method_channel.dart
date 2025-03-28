@@ -26,7 +26,7 @@ const _channel = MethodChannel('nekonata_location_fetcher');
 @pragma('vm:entry-point')
 void _callback() {
   WidgetsFlutterBinding.ensureInitialized();
-  debugPrint('🐱 Despatcher was called');
+  debugPrint('🐱 Dispatcher was called');
   _channel.setMethodCallHandler(_handler);
 }
 
@@ -41,7 +41,10 @@ Future<dynamic> _handler(MethodCall call) async {
         CallbackHandle.fromRawHandle(handle),
       );
       if (callback is void Function(Location)) {
+        debugPrint('🐱 Callback was called');
         callback(location);
+      } else {
+        debugPrint('🐱 Callback was not called');
       }
   }
 }
