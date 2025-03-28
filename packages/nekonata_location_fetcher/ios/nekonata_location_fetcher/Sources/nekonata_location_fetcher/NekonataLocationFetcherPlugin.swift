@@ -16,6 +16,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
     private var channel: FlutterMethodChannel?
     
+    private var register: ((FlutterEngine) -> Void)?
+    
     private var isDispatched: Bool = false
     private var lastUpdateTimestamp: TimeInterval = 0
     private var updateInterval: TimeInterval = 5
@@ -243,6 +245,9 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin, LocationFet
         {
             flutterEngine.run(
                 withEntrypoint: info.callbackName, libraryURI: info.callbackLibraryPath)
+            if let register = self.register {
+                register(flutterEngine)
+            }
             isDispatched = true
         } else {
             debugPrint("Dispatcher not found")
@@ -271,10 +276,10 @@ extension NekonataLocationFetcherPlugin {
     }
 
     public func initialize(
-        register: (FlutterEngine) -> Void
+        register: @escaping (FlutterEngine) -> Void
     ) {
+        self.register = register
         dispatch()
-        register(flutterEngine)
         
         channel = Self.createChannel(binaryMessenger: flutterEngine.binaryMessenger)
         
