@@ -22,7 +22,7 @@ Future<void> _callback(Location location) async {
     locations.removeRange(0, locations.length - 100);
   }
   await _prefs.setStringList(_locationKey, locations);
-  debugPrint('Location was updated');
+  debugPrint('🐱 Location was updated');
 }
 
 @riverpod
@@ -62,11 +62,24 @@ void main() {
   runApp(ProviderScope(child: const MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(_locationFetcherProvider).setCallback(_callback);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isLaunchedByBackgroundLocationTask = ref.watch(
       _isLaunchedByBackgroundLocationTaskProvider,
     );
@@ -77,6 +90,7 @@ class MyApp extends ConsumerWidget {
       );
     }
     if (isLaunchedByBackgroundLocationTask.value == true) {
+      debugPrint('🐱 isLaunchedByBackgroundLocationTask.value == true');
       return MaterialApp(
         home: Scaffold(
           body: Center(

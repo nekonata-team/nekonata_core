@@ -13,13 +13,7 @@ public class NekonataLocationFetcher {
 public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     LocationFetcherDelegate
 {
-    public var register: ((FlutterEngine) -> Void)?
-
-    private var flutterEngine = FlutterEngine(
-        name: Bundle.main.bundleIdentifier ?? "nekonata_location_fetcher")
     private var channel: FlutterMethodChannel?
-
-    private var isDispatched: Bool = false
     private var lastUpdateTimestamp: TimeInterval = 0
     private var updateInterval: TimeInterval = 5
     private var updateWorkItem: DispatchWorkItem?
@@ -57,16 +51,10 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
 
         NSLog("🐱 NekonataLocationFetcherPlugin register called")
 
-        instance.channel = createChannel(binaryMessenger: registrar.messenger())
+        instance.channel = FlutterMethodChannel(
+            name: "nekonata_location_fetcher", binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(instance, channel: instance.channel!)
         registrar.addApplicationDelegate(instance)
-    }
-
-    static func createChannel(binaryMessenger: FlutterBinaryMessenger)
-        -> FlutterMethodChannel
-    {
-        return FlutterMethodChannel(
-            name: "nekonata_location_fetcher", binaryMessenger: binaryMessenger)
     }
 
     public func handle(
@@ -75,16 +63,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
         DispatchQueue.main.async {
 
             switch call.method {
-            case "setCallback":
-                do {
-                    try self.setCallback(call)
-                    result(nil)
-                } catch {
-                    result(
-                        FlutterError(
-                            code: "error", message: error.localizedDescription,
-                            details: nil))
-                }
             case "configure":
                 do {
                     try self.configure(call)
@@ -118,23 +96,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
             }
         }
     }
-
-    private func setCallback(_ call: FlutterMethodCall) throws {
-        guard let args = call.arguments as? [String: Any],
-            let rawHandle = args[Keys.rawHandle] as? Int,
-            let dispatcherRawHandle = args[Keys.dispatcherRawHandle] as? Int
-        else {
-            throw NSError(domain: "Invalid arguments", code: 0, userInfo: nil)
-        }
-
-        Store.rawHandle = rawHandle
-        Store.dispatcherRawHandle = dispatcherRawHandle
-
-        dispatch()
-
-        NSLog("🐱 Set callback successfully")
-    }
-
+    
     private func configure(_ call: FlutterMethodCall) throws {
         guard let args = call.arguments as? [String: Any] else {
             throw NSError(
@@ -177,8 +139,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     }
 
     private func start() {
-        dispatch()
-
         updateInterval = TimeInterval(Store.interval)
         locationFetcher.start()
 
@@ -238,7 +198,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
         let battery = batteryLevel >= 0 ? Int(batteryLevel * 100) : -1
 
         let json: [String: Any] = [
-            "rawHandle": Store.rawHandle,
             "latitude": location.coordinate.latitude,
             "longitude": location.coordinate.longitude,
             "speed": location.speed,
@@ -254,33 +213,6 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
             }
             channel.invokeMethod("callback", arguments: json)
         }
-    }
-
-    /// Dart側のコールバックを呼び出し、callbackが呼ばれるようにする関数
-    /// Dart側の_callbackを参照
-    private func dispatch() {
-        guard
-            let info = FlutterCallbackCache.lookupCallbackInformation(
-                Int64(Store.dispatcherRawHandle))
-        else {
-            NSLog(
-                "🐱 Cannot dispatch from Swift: invalid raw handle: \"\(Store.dispatcherRawHandle)\""
-            )
-            return
-        }
-        guard !isDispatched else {
-            NSLog("🐱 Already dispatched from Swift")
-            return
-        }
-        flutterEngine.run(
-            withEntrypoint: info.callbackName,
-            libraryURI: info.callbackLibraryPath)
-        if let register = self.register {
-            register(flutterEngine)
-        }
-        isDispatched = true
-        NSLog("🐱 Dispatched from Swift")
-
     }
 }
 
@@ -306,15 +238,12 @@ extension NekonataLocationFetcherPlugin {
             Store.hasLocationDidFinishLaunchingWithOptions = false
         }
 
-        channel = Self.createChannel(
-            binaryMessenger: flutterEngine.binaryMessenger)
-
         UIDevice.current.isBatteryMonitoringEnabled = true
 
         if Store.isActivated {
             start()
         }
-
+        
         return true
     }
 }

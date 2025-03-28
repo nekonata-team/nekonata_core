@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -10,27 +11,32 @@ class _Keys {
   const _Keys._();
 
   static const callback = 'callback';
-  static const dispatcherRawHandle = 'dispatcherRawHandle';
-  static const rawHandle = 'rawHandle';
   static const distanceFilter = 'distanceFilter';
   static const interval = 'interval';
+
+  // iOS only
   static const mode = 'mode';
   static const useBackgroundActivitySessionManager =
       'useBackgroundActivitySessionManager';
+
+  // Android only
   static const notificationTitle = 'notificationTitle';
   static const notificationText = 'notificationText';
+  static const dispatcherRawHandle = 'dispatcherRawHandle';
+  static const rawHandle = 'rawHandle';
 }
 
-const _channel = MethodChannel('nekonata_location_fetcher');
-
+/// Android can be separate engine, so we need to use a callback dispatcher.
 @pragma('vm:entry-point')
-void _callback() {
-  WidgetsFlutterBinding.ensureInitialized();
+void _androidCallback() {
+  WidgetsFlutterBinding.ensureInitialized(); // For calling setMethodCallHandler
   debugPrint('🐱 Dispatcher was called');
-  _channel.setMethodCallHandler(_handler);
+  const MethodChannel(
+    'nekonata_location_fetcher',
+  ).setMethodCallHandler(_androidHandler);
 }
 
-Future<dynamic> _handler(MethodCall call) async {
+Future<dynamic> _androidHandler(MethodCall call) async {
   switch (call.method) {
     case _Keys.callback:
       final json = call.arguments as Map<dynamic, dynamic>;
@@ -41,10 +47,7 @@ Future<dynamic> _handler(MethodCall call) async {
         CallbackHandle.fromRawHandle(handle),
       );
       if (callback is void Function(Location)) {
-        debugPrint('🐱 Callback was called');
         callback(location);
-      } else {
-        debugPrint('🐱 Callback was not called');
       }
   }
 }
@@ -52,9 +55,24 @@ Future<dynamic> _handler(MethodCall call) async {
 /// An implementation of [NekonataLocationFetcherPlatform] that uses method channels.
 class MethodChannelNekonataLocationFetcher
     extends NekonataLocationFetcherPlatform {
+  void Function(Location) _iOSCallback = (_) {};
+
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('nekonata_location_fetcher');
+
+  /// iOS will be launched main even if the app is in background.
+  /// That's because application:didFinishLaunchingWithOptions is called.
+  /// So we don't need to use a callback dispatcher.
+  Future<dynamic> _iOSHandler(MethodCall call) async {
+    debugPrint('🐱 MethodChannelNekonataLocationFetcher._handler: $call');
+    switch (call.method) {
+      case _Keys.callback:
+        final json = call.arguments as Map<dynamic, dynamic>;
+        final location = Location.fromJson(json);
+        _iOSCallback(location);
+    }
+  }
 
   @override
   Future<void> start() async {
@@ -68,17 +86,24 @@ class MethodChannelNekonataLocationFetcher
 
   @override
   Future<void> setCallback(void Function(Location location) callback) async {
-    final dispatcherHandle = PluginUtilities.getCallbackHandle(_callback);
-    final handle = PluginUtilities.getCallbackHandle(callback);
-    assert(
-      handle != null,
-      'The callback must be a top-level or static function.',
-    );
+    if (Platform.isAndroid) {
+      final dispatcherHandle = PluginUtilities.getCallbackHandle(
+        _androidCallback,
+      );
+      final handle = PluginUtilities.getCallbackHandle(callback);
+      assert(
+        handle != null,
+        'The callback must be a top-level or static function.',
+      );
 
-    await methodChannel.invokeMethod<void>('setCallback', {
-      _Keys.dispatcherRawHandle: dispatcherHandle!.toRawHandle(),
-      _Keys.rawHandle: handle!.toRawHandle(),
-    });
+      await methodChannel.invokeMethod<void>('setCallback', {
+        _Keys.dispatcherRawHandle: dispatcherHandle!.toRawHandle(),
+        _Keys.rawHandle: handle!.toRawHandle(),
+      });
+    } else {
+      _iOSCallback = callback;
+      methodChannel.setMethodCallHandler(_iOSHandler);
+    }
   }
 
   @override
