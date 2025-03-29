@@ -1,15 +1,19 @@
 import CoreLocation
 import Flutter
 import UIKit
+import os
 
-@available(iOS 13.0, *)
+@available(iOS 14.0, *)
+let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.app.nekonata", category: "🐱")
+
+@available(iOS 14.0, *)
 public class NekonataLocationFetcher {
     static public let shared = NekonataLocationFetcherPlugin()
 
     private init() {}
 }
 
-@available(iOS 13.0, *)
+@available(iOS 14.0, *)
 public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     LocationFetcherDelegate
 {
@@ -49,7 +53,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = NekonataLocationFetcher.shared
 
-        NSLog("🐱 NekonataLocationFetcherPlugin register called")
+        logger.notice("🐱 NekonataLocationFetcherPlugin register called")
 
         instance.channel = FlutterMethodChannel(
             name: "nekonata_location_fetcher", binaryMessenger: registrar.messenger())
@@ -96,7 +100,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
             }
         }
     }
-    
+
     private func configure(_ call: FlutterMethodCall) throws {
         guard let args = call.arguments as? [String: Any] else {
             throw NSError(
@@ -148,7 +152,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
 
         Store.isActivated = true
 
-        NSLog("🐱 Start location fetching")
+        logger.notice("🐱 Start location fetching")
     }
 
     private func stop() {
@@ -160,7 +164,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
 
         Store.isActivated = false
 
-        NSLog("🐱 Stop location fetching")
+        logger.notice("🐱 Stop location fetching")
     }
 
     func locationFetcher(
@@ -206,31 +210,26 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
             "battery": battery,
         ]
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self, let channel = self.channel else {
-                debugPrint("Channel is nil, cannot invoke callback")
-                return
-            }
-            channel.invokeMethod("callback", arguments: json)
-        }
+        logger.info("🐱 callback from Swift")
+        channel?.invokeMethod("callback", arguments: json)
     }
 }
 
 /// lifecycle
-@available(iOS 13.0, *)
+@available(iOS 14.0, *)
 extension NekonataLocationFetcherPlugin {
     public func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
     ) -> Bool {
-        NSLog(
-            "🐱 NekonataLocationFetcherPlugin didFinishLaunchingWithOptions called. \(launchOptions)"
+        logger.info(
+            "🐱 NekonataLocationFetcherPlugin didFinishLaunchingWithOptions: \(launchOptions)"
         )
         if let launchOptions = launchOptions
             as? [UIApplication.LaunchOptionsKey: Any]
         {
-            NSLog(
-                "🐱 launchOptions contains location: \(launchOptions[.location] != nil)"
+            logger.notice(
+                "🐱 hasLocationDidFinishLaunchingWithOptions: \(launchOptions[.location] != nil)"
             )
             Store.hasLocationDidFinishLaunchingWithOptions =
                 launchOptions[.location] != nil
@@ -243,7 +242,7 @@ extension NekonataLocationFetcherPlugin {
         if Store.isActivated {
             start()
         }
-        
+
         return true
     }
 }

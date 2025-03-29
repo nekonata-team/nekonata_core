@@ -89,5 +89,6 @@ fetcher.stop();
 ### Limitation
 
 - minSdk is **Android 26**
-- minimum iOS version is **iOS 13**
+- minimum iOS version is **iOS 14**
   - for use `Task`
+  - for use `Logger`

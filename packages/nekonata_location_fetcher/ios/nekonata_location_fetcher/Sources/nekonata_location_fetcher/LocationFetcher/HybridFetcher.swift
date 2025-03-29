@@ -27,20 +27,24 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            // CLLocationUpdateが動かなかったときのために、ここでもupdateを呼ぶ
+            update(location)
+        }
         if updateTask == nil {
-            NSLog("🐱 .didUpdateLocations")
+            logger.info("🐱 .didUpdateLocations")
             startLiveUpdates()
         } else {
-            NSLog("🐱 .didUpdateLocations: ignore")
+            logger.info("🐱 .didUpdateLocations: ignore")
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        debugPrint("Failed to find user's location: \(error.localizedDescription)")
+        logger.warning("Failed to find user's location: \(error.localizedDescription)")
     }
 
     private func startLiveUpdates() {
-        NSLog("🐱 Start liveUpdates")
+        logger.notice("🐱 Start liveUpdates")
 
         let distanceFilter = Store.distanceFilter
 
@@ -52,32 +56,34 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
             let _ = CLServiceSession(authorization: .always)
             BackgroundActivitySessionManager.activate()
 
-            for try await update in CLLocationUpdate.liveUpdates() {
-                guard let self = self else { return }
-                guard let location = update.location else { continue }
+            do {
+                for try await update in CLLocationUpdate.liveUpdates() {
+                    guard let self = self else { return }
+                    guard let location = update.location else { continue }
 
-                // debugPrint(location)
+                    if Task.isCancelled {
+                        break
+                    }
 
-                if Task.isCancelled {
-                    break
-                }
-
-                if update.stationary {
-                    debugPrint("Stationary")
-                    self.update(location)
-                    break
-                } else {
-                    // 距離を確認して、しきい値を超える場合はupdateを呼ぶ
-                    if self.isOverOrNil(location, distanceFilter) {
+                    if update.stationary {
+                        logger.notice("🐱 Stationary")
                         self.update(location)
+                        break
+                    } else {
+                        // 距離を確認して、しきい値を超える場合はupdateを呼ぶ
+                        if self.isOverOrNil(location, distanceFilter) {
+                            self.update(location)
+                        }
                     }
                 }
+            } catch {
+                logger.warning("🐱 startLiveUpdates failed: \(error)")
             }
         }
     }
 
     private func stopLiveUpdates() {
-        NSLog("🐱 Stop liveUpdates")
+        logger.notice("🐱 Stop liveUpdates")
         updateTask?.cancel()
         updateTask = nil
         lastLocation = nil
