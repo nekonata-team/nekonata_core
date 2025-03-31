@@ -1,6 +1,5 @@
 package com.example.nekonata_location_fetcher
 
-import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -57,7 +56,9 @@ class LocationForegroundService : Service() {
                 if (location != null) {
                     channel.invokeMethod(
                         "callback", mapOf(
-                            "rawHandle" to runBlocking { Store.getRawHandle(this@LocationForegroundService).first() },
+                            "rawHandle" to runBlocking {
+                                Store.getRawHandle(this@LocationForegroundService).first()
+                            },
                             "latitude" to location.latitude,
                             "longitude" to location.longitude,
                             "speed" to location.speed,
@@ -71,6 +72,7 @@ class LocationForegroundService : Service() {
         }
 
     }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
 
@@ -84,7 +86,11 @@ class LocationForegroundService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
@@ -92,7 +98,8 @@ class LocationForegroundService : Service() {
         // 非同期で通知を更新
         runBlocking {
             val updatedNotification = createNotification()
-            val notificationManager = getSystemService(NotificationManager::class.java) as NotificationManager
+            val notificationManager =
+                getSystemService(NotificationManager::class.java) as NotificationManager
             notificationManager.notify(NOTIFICATION_ID, updatedNotification)
             Log.d(TAG, "Notification updated")
         }

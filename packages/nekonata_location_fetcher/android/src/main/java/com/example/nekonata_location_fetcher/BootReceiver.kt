@@ -13,7 +13,6 @@ class BootReceiver : BroadcastReceiver() {
         Log.d(TAG, "Received BootReceiver intent: ${intent.action}")
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             val isActive = runBlocking { Store.getIsActive(context).first() }
-            Log.d(TAG, "isActive: $isActive")
             if (Permission.hasLocationPermission(context) && isActive) {
                 val serviceIntent = Intent(context, LocationForegroundService::class.java)
                 context.startForegroundService(serviceIntent)

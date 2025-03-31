@@ -10,10 +10,6 @@ import nekonata_location_fetcher  // Add this line
     ) -> Bool {
         GeneratedPluginRegistrant.register(with: self)
 
-        NekonataLocationFetcher.shared.register = { flutterEngine in
-            GeneratedPluginRegistrant.register(with: flutterEngine)
-        }
-
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 }

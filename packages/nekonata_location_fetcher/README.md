@@ -67,30 +67,6 @@ fetcher.stop();
 <string>We need your location to provide better services.</string>
 ```
 
-```swift
-import Flutter
-import UIKit
-import nekonata_location_fetcher  // Add this line
-
-@main
-@objc class AppDelegate: FlutterAppDelegate {
-    override func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        GeneratedPluginRegistrant.register(with: self)
-
-        NekonataLocationFetcher.shared.register = { flutterEngine in
-            GeneratedPluginRegistrant.register(with: flutterEngine)
-        }
-
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    }
-}
-
-
-```
-
 - Add `Background Modes` in `Signing & Capabilities`
   - `Location Updates`
 - Add descriptions in `Info.plist`
@@ -113,5 +89,6 @@ import nekonata_location_fetcher  // Add this line
 ### Limitation
 
 - minSdk is **Android 26**
-- minimum iOS version is **iOS 13**
+- minimum iOS version is **iOS 14**
   - for use `Task`
+  - for use `Logger`
