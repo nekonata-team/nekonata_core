@@ -187,6 +187,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
             args["longitude"] as? Double ?? current.centerCoordinate.longitude
         let zoom = args["zoom"] as? Double ?? zoomLevel()
         let heading = args["heading"] as? Double ?? current.heading
+        let animated = args["animated"] as! Bool
 
         let coordinate = CLLocationCoordinate2D(
             latitude: latitude, longitude: longitude)
@@ -214,7 +215,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
             fromDistance: adjustedDistance,
             pitch: current.pitch,
             heading: heading)
-        mapView.setCamera(camera, animated: true)
+        mapView.setCamera(camera, animated: animated)
     }
 
     func setRegion(_ call: FlutterMethodCall) {

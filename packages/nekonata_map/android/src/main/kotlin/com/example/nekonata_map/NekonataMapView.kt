@@ -220,6 +220,7 @@ internal class NekonataMapView(
         val longitude = args["longitude"] as? Double
         val heading = args["heading"] as? Double
         val zoom = args["zoom"] as? Double
+        val animated = args["animated"] as Boolean
 
         val current = googleMap.cameraPosition
 
@@ -230,7 +231,11 @@ internal class NekonataMapView(
             .zoom((zoom?.toFloat() ?: current.zoom))
             .bearing(heading?.toFloat() ?: current.bearing)
             .build()
-        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(position))
+        if (animated) {
+            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(position))
+        } else {
+            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(position))
+        }
     }
 
 
