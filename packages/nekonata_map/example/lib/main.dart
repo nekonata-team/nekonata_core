@@ -6,7 +6,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:nekonata_map/gestures/edge_zoom_gesture.dart';
 import 'package:nekonata_map/marker.dart';
 import 'package:nekonata_map/nekonata_map.dart';
-import 'package:nekonata_map/nekonata_map_controller.dart';
 
 void main() {
   runApp(const MyApp());

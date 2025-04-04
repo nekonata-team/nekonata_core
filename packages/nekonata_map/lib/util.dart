@@ -1,5 +1,5 @@
 import 'package:latlong2/latlong.dart';
-import 'package:nekonata_map/nekonata_map_controller.dart';
+import 'package:nekonata_map/nekonata_map.dart';
 
 /// Utility extension for [NekonataMapController].
 extension NekonataMapControllerX on NekonataMapController {

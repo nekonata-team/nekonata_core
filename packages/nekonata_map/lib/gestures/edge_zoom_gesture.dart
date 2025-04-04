@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:nekonata_map/nekonata_map_controller.dart';
+import 'package:nekonata_map/nekonata_map.dart';
 
 /// Gesture detector for zooming in and out using edge zones.
 /// Shows a visual curved effect toward the touch point.
