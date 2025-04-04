@@ -142,7 +142,7 @@ class _EdgeZoomGestureState extends State<EdgeZoomGesture> {
     if (_startDragY == null || _initialZoom == null) return;
 
     final dy = details.localPosition.dy;
-    final deltaY = dy - _startDragY!;
+    final deltaY = _startDragY! - dy;
     final zoomDelta = deltaY / widget.zoomSensitivity;
     _currentZoom = _initialZoom! + zoomDelta;
     widget.controller.moveCamera(zoom: _currentZoom, animated: false);
