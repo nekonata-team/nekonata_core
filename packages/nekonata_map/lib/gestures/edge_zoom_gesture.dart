@@ -39,12 +39,7 @@ class _ZoomEffectData {
     required this.tappingPosition,
     required this.isLeftSide,
   });
-  factory _ZoomEffectData.fromPosition(Offset position, double width) {
-    return _ZoomEffectData(
-      tappingPosition: position,
-      isLeftSide: position.dx < width / 2,
-    );
-  }
+
   final Offset tappingPosition;
   final bool isLeftSide;
 
@@ -58,9 +53,9 @@ class _ZoomEffectData {
 
 class _EdgeZoomGestureState extends State<EdgeZoomGesture> {
   bool _isZooming = false;
-  late double _initialZoom;
-  late double _currentZoom;
-  late double _startDragY;
+  double? _initialZoom;
+  double? _currentZoom;
+  double? _startDragY;
 
   final ValueNotifier<_ZoomEffectData?> _zoomEffectNotifier = ValueNotifier(
     null,
@@ -118,31 +113,38 @@ class _EdgeZoomGestureState extends State<EdgeZoomGesture> {
   Future<void> _onVerticalDragStart(DragStartDetails details) async {
     final dx = details.localPosition.dx;
     if (_isInEdgeZone(dx)) {
+      final renderBox = context.findRenderObject()! as RenderBox;
+      final localPosition = renderBox.globalToLocal(details.globalPosition);
+
       _isZooming = true;
-      _zoomEffectNotifier.value = _ZoomEffectData.fromPosition(
-        details.globalPosition,
-        MediaQuery.sizeOf(context).width,
+      _zoomEffectNotifier.value = _ZoomEffectData(
+        tappingPosition: localPosition,
+        isLeftSide: localPosition.dx < MediaQuery.sizeOf(context).width / 2,
       );
+      _startDragY = details.localPosition.dy;
       _initialZoom = await widget.controller.zoom;
       _currentZoom = _initialZoom;
-      _startDragY = details.localPosition.dy;
     }
   }
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
     if (_isZooming) {
       _updateZoom(details);
+      final renderBox = context.findRenderObject()! as RenderBox;
+      final localPosition = renderBox.globalToLocal(details.globalPosition);
       _zoomEffectNotifier.value = _zoomEffectNotifier.value?.copyWith(
-        tappingPosition: details.globalPosition,
+        tappingPosition: localPosition,
       );
     }
   }
 
   void _updateZoom(DragUpdateDetails details) {
+    if (_startDragY == null || _initialZoom == null) return;
+
     final dy = details.localPosition.dy;
-    final deltaY = dy - _startDragY;
+    final deltaY = dy - _startDragY!;
     final zoomDelta = deltaY / widget.zoomSensitivity;
-    _currentZoom = _initialZoom + zoomDelta;
+    _currentZoom = _initialZoom! + zoomDelta;
     widget.controller.moveCamera(zoom: _currentZoom, animated: false);
   }
 
