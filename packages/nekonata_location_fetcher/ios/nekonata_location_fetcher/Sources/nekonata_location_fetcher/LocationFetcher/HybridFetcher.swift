@@ -32,10 +32,10 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
             update(location)
         }
         if updateTask == nil {
-            logger.info("🐱 .didUpdateLocations")
+            logger.info(".didUpdateLocations")
             startLiveUpdates()
         } else {
-            logger.info("🐱 .didUpdateLocations: ignore")
+            logger.info(".didUpdateLocations: ignore")
         }
     }
 
@@ -44,7 +44,7 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
     }
 
     private func startLiveUpdates() {
-        logger.notice("🐱 Start liveUpdates")
+        logger.notice("Start liveUpdates")
 
         let distanceFilter = Store.distanceFilter
 
@@ -66,7 +66,7 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
                     }
 
                     if update.stationary {
-                        logger.notice("🐱 Stationary")
+                        logger.notice("Stationary")
                         self.update(location)
                         break
                     } else {
@@ -77,13 +77,13 @@ class HybridFetcher: NSObject, LocationFetcher, CLLocationManagerDelegate {
                     }
                 }
             } catch {
-                logger.warning("🐱 startLiveUpdates failed: \(error)")
+                logger.warning("startLiveUpdates failed: \(error)")
             }
         }
     }
 
     private func stopLiveUpdates() {
-        logger.notice("🐱 Stop liveUpdates")
+        logger.notice("Stop liveUpdates")
         updateTask?.cancel()
         updateTask = nil
         lastLocation = nil

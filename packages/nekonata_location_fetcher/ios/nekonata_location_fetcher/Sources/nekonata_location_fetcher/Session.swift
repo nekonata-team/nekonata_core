@@ -6,9 +6,9 @@ class BackgroundActivitySessionManager {
 
     public static func activate() {
         invalidate()
-        
+
         if Store.useBackgroundActivitySessionManager {
-            logger.notice("🐱 Activated background session")
+            logger.notice("Activated background session")
             backgroundActivitySession = CLBackgroundActivitySession()
         }
     }

@@ -23,7 +23,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     private var updateWorkItem: DispatchWorkItem?
 
     private let workItemQueue = DispatchQueue(label: "com.app.nekonata.updateWorkItemQueue")
-    
+
     private var locationFetcher: LocationFetcher {
         if _locationFetcher == nil {
             let mode = Mode(rawValue: Store.mode) ?? Mode.hybrid
@@ -55,7 +55,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = NekonataLocationFetcher.shared
 
-        logger.notice("🐱 NekonataLocationFetcherPlugin register called")
+        logger.notice("NekonataLocationFetcherPlugin register called")
 
         instance.channel = FlutterMethodChannel(
             name: "nekonata_location_fetcher", binaryMessenger: registrar.messenger())
@@ -154,7 +154,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
 
         Store.isActivated = true
 
-        logger.notice("🐱 Start location fetching")
+        logger.notice("Start location fetching")
     }
 
     private func stop() {
@@ -166,13 +166,15 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
 
         Store.isActivated = false
 
-        logger.notice("🐱 Stop location fetching")
+        logger.notice("Stop location fetching")
     }
 
     func locationFetcher(
         _ fetcher: any LocationFetcher, didUpdateLocation location: CLLocation
     ) {
-        logger.debug("locationFetcher.didUpdateLocation called: \(location.coordinate.longitude), \(location.coordinate.latitude)")
+        logger.debug(
+            "locationFetcher.didUpdateLocation called: \(location.coordinate.longitude), \(location.coordinate.latitude)"
+        )
         let currentTimestamp = Date().timeIntervalSince1970
         let interval = currentTimestamp - lastUpdateTimestamp
 
@@ -195,7 +197,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
             updateWorkItem = workItem
         }
     }
-    
+
     private func callback(_ location: CLLocation) {
         let batteryLevel = UIDevice.current.batteryLevel
         let battery = batteryLevel >= 0 ? Int(batteryLevel * 100) : -1
@@ -209,7 +211,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
             "battery": battery,
         ]
 
-        logger.info("🐱 callback from Swift")
+        logger.info("callback from Swift")
         channel?.invokeMethod("callback", arguments: json)
     }
 }
@@ -222,13 +224,13 @@ extension NekonataLocationFetcherPlugin {
         didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]
     ) -> Bool {
         logger.info(
-            "🐱 NekonataLocationFetcherPlugin didFinishLaunchingWithOptions: \(launchOptions)"
+            "NekonataLocationFetcherPlugin didFinishLaunchingWithOptions: \(launchOptions)"
         )
         if let launchOptions = launchOptions
             as? [UIApplication.LaunchOptionsKey: Any]
         {
             logger.notice(
-                "🐱 hasLocationDidFinishLaunchingWithOptions: \(launchOptions[.location] != nil)"
+                "hasLocationDidFinishLaunchingWithOptions: \(launchOptions[.location] != nil)"
             )
             Store.hasLocationDidFinishLaunchingWithOptions =
                 launchOptions[.location] != nil
