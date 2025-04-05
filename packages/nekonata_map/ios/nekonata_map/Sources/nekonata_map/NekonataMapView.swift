@@ -324,7 +324,7 @@ extension NekonataMapView: MKMapViewDelegate {
     }
 
     func mapView(_ mapView: MKMapView, didSelect annotation: MKAnnotation) {
-        guard let annotation = annotation as? Annotation else {
+        guard let annotation = annotation as? Annotation, setUpFinished else {
             return
         }
         

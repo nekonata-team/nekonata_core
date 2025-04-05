@@ -37,6 +37,8 @@ internal class NekonataMapView(
 
     private var preZoom: Float = 0F
 
+    private var initialCameraSetting = false
+
     init {
         lifecycleProvider.getLifecycle()?.addObserver(this)
         mapView.onCreate(null)
@@ -92,7 +94,9 @@ internal class NekonataMapView(
             val lng = args["longitude"] as Double
             val coordinate = LatLng(lat, lng)
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinate, 15f))
-
+            // 初回のカメラ移動の場合は、onCameraMoveを呼ばない仕様
+            // これはiOSと合わせている。この挙動を実現するためのフラグをセットする
+            initialCameraSetting = true
             preZoom = getZoom()
         }
 
@@ -120,6 +124,10 @@ internal class NekonataMapView(
         }
 
         map.setOnCameraMoveListener {
+            if (initialCameraSetting) {
+                initialCameraSetting = false
+                return@setOnCameraMoveListener
+            }
             channel.invokeMethod(
                 "onCameraMove", null
             )
@@ -177,17 +185,10 @@ internal class NekonataMapView(
         }
 
         container.add(id, marker, animator)
-
-        // おそらくプラグイン側の問題でUIが更新されない
-        // よって、ほんの少しだけzoomの値を書き換えて再描画する
-        googleMap.moveCamera(CameraUpdateFactory.zoomBy(0.0001f))
     }
 
     private fun removeMarker(id: String) {
         container.remove(id)
-
-        // addMarkerと同様、ほんの少しだけzoomの値を書き換えて再描画する
-        googleMap.moveCamera(CameraUpdateFactory.zoomBy(0.0001f))
     }
 
     private fun updateMarker(args: Map<String, Any>) {
@@ -216,9 +217,6 @@ internal class NekonataMapView(
 
         val marker = container.get(id) ?: return
         marker.isVisible = isVisible
-
-        // addMarkerと同様、ほんの少しだけzoomの値を書き換えて再描画する
-        googleMap.moveCamera(CameraUpdateFactory.zoomBy(0.0001f))
     }
 
     private fun moveCamera(args: Map<String, Any>) {
