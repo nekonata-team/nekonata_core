@@ -22,6 +22,8 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     private var updateInterval: TimeInterval = 5
     private var updateWorkItem: DispatchWorkItem?
 
+    private let workItemQueue = DispatchQueue(label: "com.app.nekonata.updateWorkItemQueue")
+    
     private var locationFetcher: LocationFetcher {
         if _locationFetcher == nil {
             let mode = Mode(rawValue: Store.mode) ?? Mode.hybrid
@@ -170,9 +172,7 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
     func locationFetcher(
         _ fetcher: any LocationFetcher, didUpdateLocation location: CLLocation
     ) {
-        // debugPrint("called", location.coordinate.longitude, location.coordinate.latitude)
-
-        // throttle like Android FusedLocationProviderClient.setInterval
+        logger.debug("locationFetcher.didUpdateLocation called: \(location.coordinate.longitude), \(location.coordinate.latitude)")
         let currentTimestamp = Date().timeIntervalSince1970
         let interval = currentTimestamp - lastUpdateTimestamp
 
@@ -182,21 +182,20 @@ public class NekonataLocationFetcherPlugin: NSObject, FlutterPlugin,
             return
         }
 
-        updateWorkItem?.cancel()
-        let delay = max(0, updateInterval - interval)
-
-        let workItem = DispatchWorkItem { [weak self] in
-            guard let self = self else { return }
-
-            self.callback(location)
-            self.lastUpdateTimestamp = currentTimestamp + delay
+        workItemQueue.sync {
+            updateWorkItem?.cancel()
+            updateWorkItem = nil
+            let delay = max(0, updateInterval - interval)
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                self.callback(location)
+                self.lastUpdateTimestamp = currentTimestamp + delay
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+            updateWorkItem = workItem
         }
-
-        DispatchQueue.main.asyncAfter(
-            deadline: .now() + delay, execute: workItem)
-        updateWorkItem = workItem
     }
-
+    
     private func callback(_ location: CLLocation) {
         let batteryLevel = UIDevice.current.batteryLevel
         let battery = batteryLevel >= 0 ? Int(batteryLevel * 100) : -1
