@@ -87,7 +87,6 @@ internal class NekonataMapView(
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
 
-
         creationParams.let { args ->
             val lat = args?.get("latitude") as Double
             val lng = args["longitude"] as Double
@@ -109,6 +108,7 @@ internal class NekonataMapView(
             channel.invokeMethod("onMarkerTapped", marker.tag as? String)
             true
         }
+
         map.setOnMapClickListener { latLng ->
             channel.invokeMethod(
                 "onMapTapped",
@@ -116,6 +116,12 @@ internal class NekonataMapView(
                     "latitude" to latLng.latitude,
                     "longitude" to latLng.longitude,
                 ),
+            )
+        }
+
+        map.setOnCameraMoveListener {
+            channel.invokeMethod(
+                "onCameraMove", null
             )
         }
 

@@ -17,6 +17,9 @@ typedef OnZoomEnd = void Function(double zoom);
 /// Callback typedef that will be called when a controller is created.
 typedef OnControllerCreated = void Function(NekonataMapController controller);
 
+/// Callback typedef that will be called when the camera moves.
+typedef OnCameraMove = void Function();
+
 /// A widget that displays a map.
 class NekonataMap extends StatelessWidget {
   /// Creates a new [NekonataMap] instance.
@@ -27,6 +30,7 @@ class NekonataMap extends StatelessWidget {
     this.onMarkerTapped,
     this.onMapTapped,
     this.onZoomEnd,
+    this.onCameraMove,
   });
 
   /// The initial latitude and longitude of the map.
@@ -43,6 +47,9 @@ class NekonataMap extends StatelessWidget {
 
   /// Callback that will be called when the zoom level of the map changes.
   final OnZoomEnd? onZoomEnd;
+
+  /// Callback that will be called when the camera moves.
+  final OnCameraMove? onCameraMove;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +68,7 @@ class NekonataMap extends StatelessWidget {
             onMarkerTapped: onMarkerTapped,
             onMapTapped: onMapTapped,
             onZoomEnd: onZoomEnd,
+            onCameraMove: onCameraMove,
           );
         },
         creationParams: creationParams,
@@ -76,6 +84,7 @@ class NekonataMap extends StatelessWidget {
           onMarkerTapped: onMarkerTapped,
           onMapTapped: onMapTapped,
           onZoomEnd: onZoomEnd,
+          onCameraMove: onCameraMove,
         );
       },
       creationParams: creationParams,
@@ -97,9 +106,12 @@ class NekonataMapController {
     OnMarkerTapped? onMarkerTapped,
     OnMapTapped? onMapTapped,
     OnZoomEnd? onZoomEnd,
+    OnCameraMove? onCameraMove,
   }) : _channel = MethodChannel('nekonata_map_$id') {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
+        case 'onCameraMove':
+          onCameraMove?.call();
         case 'onMapReady':
           onControllerCreated?.call(this);
         case 'onMarkerTapped':

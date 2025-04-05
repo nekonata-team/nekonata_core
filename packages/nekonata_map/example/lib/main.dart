@@ -126,6 +126,7 @@ class _MapPageState extends State<MapPage> {
                 (latitude, longitude) =>
                     debugPrint("Map tapped: $latitude, $longitude"),
             onZoomEnd: (zoom) => debugPrint("Zoom end: $zoom"),
+            onCameraMove: () => debugPrint("Camera moved"),
           ),
           if (_controller != null) EdgeZoomGesture(controller: _controller!),
         ],

@@ -75,7 +75,7 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         // state setup
         preZoomLevel = zoomLevel()
     }
-
+    
     func view() -> UIView {
         return mapView
     }
@@ -327,12 +327,24 @@ extension NekonataMapView: MKMapViewDelegate {
         guard let annotation = annotation as? Annotation else {
             return
         }
-
+        
+        // １秒後にdeselect
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            mapView.deselectAnnotation(annotation, animated: true)
+        }
+        
         channel.invokeMethod("onMarkerTapped", arguments: annotation.id)
+    }
+    
+    func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
+        guard setUpFinished else { return }
+        
+        channel.invokeMethod("onCameraMove", arguments: nil)
     }
 
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        // 既存のワークアイテムがあればキャンセルする
+        guard setUpFinished else { return }
+        
         regionDidChangeWorkItem?.cancel()
 
         let workItem = DispatchWorkItem { [weak self] in
@@ -341,10 +353,6 @@ extension NekonataMapView: MKMapViewDelegate {
             if preZoomLevel != zoomLevel {
                 self.channel.invokeMethod("onZoomEnd", arguments: zoomLevel)
                 preZoomLevel = zoomLevel
-
-                //                if #available(iOS 13.0, *) {
-                //                    debugPrint(mapView.camera.centerCoordinateDistance)
-                //                }
             }
         }
 
