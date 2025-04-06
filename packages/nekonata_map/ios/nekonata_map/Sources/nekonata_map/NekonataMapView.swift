@@ -187,37 +187,30 @@ class NekonataMapView: NSObject, FlutterPlatformView {
 
     func moveCamera(_ call: FlutterMethodCall) {
         guard let args = call.arguments as? [String: Any] else { return }
-
+        
         let current = mapView.camera
-        let latitude =
-            args["latitude"] as? Double ?? current.centerCoordinate.latitude
-        let longitude =
-            args["longitude"] as? Double ?? current.centerCoordinate.longitude
-        let zoom = args["zoom"] as? Double ?? zoomLevel()
+        let latitude = args["latitude"] as? Double ?? current.centerCoordinate.latitude
+        let longitude = args["longitude"] as? Double ?? current.centerCoordinate.longitude
         let heading = args["heading"] as? Double ?? current.heading
-        let animated = args["animated"] as! Bool
+        
+        guard let animated = args["animated"] as? Bool else { return }
+        
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        
+        // zoom パラメータが指定されていない場合、現在のカメラ設定（ズーム、回転、ピッチ）を維持する
+        guard let zoom = args["zoom"] as? Double else {
+            let camera = MKMapCamera(
+                lookingAtCenter: coordinate,
+                fromDistance: current.altitude,
+                pitch: current.pitch,
+                heading: heading)
+            mapView.setCamera(camera, animated: animated)
+            return
+        }
 
-        let coordinate = CLLocationCoordinate2D(
-            latitude: latitude, longitude: longitude)
-
-        // ズームレベルに応じた距離（赤道での理想値）
-        let unadjustedDistance = baseDistance / pow(2, zoom - 2)
-
-        // 中心座標の緯度による補正
-        let latFactor = cos(coordinate.latitude * .pi / 180)
-        let targetDistanceWithLatitude = unadjustedDistance * latFactor
-
-        // 画面回転によるバウンディングボックスの補正
-        // fromDistanceは見える範囲に影響しているらしく、回転時には見える範囲が変わるため係数を掛ける必要がある
-        let mapSize = mapView.bounds.size
-        let originalWidth = Double(mapSize.width)
-        let originalHeight = Double(mapSize.height)
-        let angle = heading * .pi / 180.0
-        let rotatedWidth =
-            abs(cos(angle)) * originalWidth + abs(sin(angle)) * originalHeight
-        let correctionFactor = originalWidth / rotatedWidth
-        let adjustedDistance = targetDistanceWithLatitude * correctionFactor
-
+        // 補正済みの距離を算出（緯度補正・回転補正を含む）
+        let adjustedDistance = calculateAdjustedDistance(forZoom: zoom, heading: heading, latitude: latitude)
+        
         let camera = MKMapCamera(
             lookingAtCenter: coordinate,
             fromDistance: adjustedDistance,
@@ -226,6 +219,26 @@ class NekonataMapView: NSObject, FlutterPlatformView {
         mapView.setCamera(camera, animated: animated)
     }
 
+    /// zoom、heading、latitude に応じた fromDistance を計算する
+    private func calculateAdjustedDistance(forZoom zoom: Double, heading: Double, latitude: Double) -> Double {
+        // ズームレベルに応じた基準距離（赤道上の理想値）
+        let unadjustedDistance = baseDistance / pow(2, zoom - 2)
+        
+        // 緯度に応じた補正（緯度が高いほど緯度方向の縮尺が小さくなる）
+        let latFactor = cos(latitude * .pi / 180)
+        let targetDistance = unadjustedDistance * latFactor
+        
+        // 画面回転によるバウンディングボックス補正
+        let mapSize = mapView.bounds.size
+        let originalWidth = Double(mapSize.width)
+        let originalHeight = Double(mapSize.height)
+        let angle = heading * .pi / 180.0
+        let rotatedWidth = abs(cos(angle)) * originalWidth + abs(sin(angle)) * originalHeight
+        let correctionFactor = originalWidth / rotatedWidth
+        
+        return targetDistance * correctionFactor
+    }
+    
     func setRegion(_ call: FlutterMethodCall) {
         guard let args = call.arguments as? [String: Any],
             let minLat = args["minLatitude"] as? Double,
