@@ -80,6 +80,20 @@ internal class NekonataMapView(
                     result.success(googleMap.cameraPosition.zoom)
                 }
 
+                "latLng" -> {
+                    val latLng = googleMap.cameraPosition.target
+                    result.success(
+                        mapOf(
+                            "latitude" to latLng.latitude,
+                            "longitude" to latLng.longitude,
+                        )
+                    )
+                }
+
+                "heading" -> {
+                    result.success(googleMap.cameraPosition.bearing)
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -163,8 +177,7 @@ internal class NekonataMapView(
 
         // [Platform-specific code | Flutter](https://docs.flutter.dev/platform-integration/platform-channels#codec)
         if (image != null) {
-            val bitmap = BitmapFactory
-                .decodeByteArray(image, 0, image.size)
+            val bitmap = BitmapFactory.decodeByteArray(image, 0, image.size)
                 .resized(minWidth, minHeight, density)
 
             markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap))
@@ -177,9 +190,7 @@ internal class NekonataMapView(
             if (isGifData(image)) {
                 val (frames, durations) = decodeGif(image)
                 animator = MarkerAnimator(
-                    marker,
-                    frames.map { it.resized(minWidth, minHeight, density) },
-                    durations
+                    marker, frames.map { it.resized(minWidth, minHeight, density) }, durations
                 )
             }
         }
@@ -230,11 +241,9 @@ internal class NekonataMapView(
 
         val coordinate =
             LatLng(latitude ?: current.target.latitude, longitude ?: current.target.longitude)
-        val position = CameraPosition.Builder()
-            .target(coordinate)
-            .zoom((zoom?.toFloat() ?: current.zoom))
-            .bearing(heading?.toFloat() ?: current.bearing)
-            .build()
+        val position =
+            CameraPosition.Builder().target(coordinate).zoom((zoom?.toFloat() ?: current.zoom))
+                .bearing(heading?.toFloat() ?: current.bearing).build()
         if (animated) {
             googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(position))
         } else {

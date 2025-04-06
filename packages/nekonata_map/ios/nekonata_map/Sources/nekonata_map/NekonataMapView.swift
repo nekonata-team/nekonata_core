@@ -105,6 +105,14 @@ class NekonataMapView: NSObject, FlutterPlatformView {
                 result(nil)
             case "zoom":
                 result(self.zoomLevel())
+            case "latLng":
+                let latLng = self.mapView.centerCoordinate
+                result([
+                    "latitude": latLng.latitude,
+                    "longitude": latLng.longitude
+                ])
+            case "heading":
+                result(self.mapView.camera.heading)
             default:
                 result(FlutterMethodNotImplemented)
             }

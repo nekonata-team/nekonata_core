@@ -137,6 +137,18 @@ class NekonataMapController {
   Future<double> get zoom =>
       _channel.invokeMethod<double>('zoom').then((value) => value!);
 
+  /// Gets the current latitude and longitude of the map.
+  Future<LatLng> get latLng =>
+      _channel.invokeMethod<Map<dynamic, dynamic>>('latLng').then((value) {
+        final latitude = value!['latitude'] as double;
+        final longitude = value['longitude'] as double;
+        return LatLng(latitude, longitude);
+      });
+
+  /// Gets the current heading of the map.
+  Future<double> get heading =>
+      _channel.invokeMethod<double>('heading').then((value) => value!);
+
   /// Adds a marker to the map.
   Future<void> addMarker(MarkerData marker) =>
       _channel.invokeMethod('addMarker', marker.toMap());

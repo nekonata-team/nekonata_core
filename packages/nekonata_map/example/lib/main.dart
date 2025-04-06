@@ -134,6 +134,42 @@ class _MapPageState extends State<MapPage> {
       persistentFooterButtons: [
         if (_controller != null) ..._buildFooterButtons(_controller!),
       ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text("Camera Info"),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FutureBuilder(
+                        future: _controller?.latLng,
+                        builder: (context, snapshot) {
+                          return Text("LatLng: ${snapshot.data}");
+                        },
+                      ),
+                      FutureBuilder(
+                        future: _controller?.zoom,
+                        builder: (context, snapshot) {
+                          return Text("Zoom: ${snapshot.data}");
+                        },
+                      ),
+                      FutureBuilder(
+                        future: _controller?.heading,
+                        builder: (context, snapshot) {
+                          return Text("Heading: ${snapshot.data}");
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+          );
+        },
+        child: const Icon(Icons.info),
+      ),
     );
   }
 
