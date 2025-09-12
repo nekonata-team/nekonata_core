@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "firestore",
     "nekonata",
     "prefs",
     "pubspec"
@@ -31,5 +32,4 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": true
   },
-  "dart.flutterSdkPath": ".fvm/versions/3.32.8"
 }

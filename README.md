@@ -2,27 +2,27 @@
 
 nekonataの、nekonataによる、nekonataのためのライブラリ
 
-## TL;DR
-
-- 開発規則は少なくとも読んでおいてください
-
 ## 開発規則
-
-READMEはできるだけ簡潔に書く
 
 ### 設計方針
 
+- [Home | mise-en-place](https://mise.jdx.dev/)を採用
 - `very_good_analysis`を採用
 - `packages/`フォルダにパッケージ群を配置する
-- [Workspaces | Dart](https://dart.dev/tools/pub/workspaces)をもとに、monorepo形式を採用
+- [Workspaces | Dart](https://dart.dev/tools/pub/workspaces)によるmonorepo形式
 - 基本的にパッケージに依存するパッケージのバージョンは指定しない
 
 ### 新規プロジェクト作成時
 
-1. fvmのセットアップ
+1. miseのセットアップ
 
     トップレベルのディレクトリで以下のコマンドを実行
-    `fvm use`
+
+    ```bash
+    mise trust
+
+    mise install
+    ```
 
 2. Flutterのコマンドで作成
 
@@ -52,45 +52,7 @@ READMEはできるだけ簡潔に書く
 
     ```yaml
     workspace:
-        - packages/nekonata_service
-        - packages/nekonata_location_fetcher
-        - packages/nekonata_map
+        - packages/xxx
+        - ...
         - packages/nekonata_<package name> # here
     ```
-
-### READMEのテンプレート
-
-```md
-# nekonata_xxx
-
-abstract for project
-
-## Getting Started
-
-xxx
-
-## How to Use
-
-Check example app.
-
-xxx
-
-## Setup
-
-### iOS
-
-xxx
-
-### Android
-
-xxx
-
-## Limitation
-
-- xxx
-
-```
-
-## 参考サイト
-
-- [【Flutter3.27以降】マルチプロジェクトの作成│Flutter Salon](https://flutter.salon/dart/pub-workspaces/)を参考

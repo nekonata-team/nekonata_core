@@ -1,0 +1,13 @@
+[tools]
+flutter = "3.35.1"
+
+[tasks."get:all"]
+run = "dart pub get"
+description = "Get dependencies"
+
+[tasks."get:example"]
+run = [
+    "dart pub get -C packages/nekonata_location_fetcher/example",
+    "dart pub get -C packages/nekonata_map/example",
+]
+description = "Get example dependencies"
