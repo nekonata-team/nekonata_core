@@ -9,6 +9,7 @@ workspace:
   - packages/nekonata_map
   - packages/nekonata_firestore
   - packages/nekonata_lint
+  - packages/nekonata_reporter
 
 dev_dependencies:
   very_good_analysis: ^9.0.0

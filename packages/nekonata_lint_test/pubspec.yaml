@@ -13,6 +13,6 @@ dev_dependencies:
   auto_route_generator:
   build_runner:
   custom_lint:
-  very_good_analysis:
   nekonata_lint:
     path: ../nekonata_lint
+  very_good_analysis:
