@@ -3,7 +3,8 @@
     "firestore",
     "nekonata",
     "prefs",
-    "pubspec"
+    "pubspec",
+    "riverpod"
   ],
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.expand": false,

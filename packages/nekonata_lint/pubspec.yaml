@@ -1,0 +1,17 @@
+name: nekonata_lint
+description: "A new Flutter package project."
+version: 0.0.1
+
+resolution: workspace
+
+environment:
+  sdk: ^3.9.0
+  flutter: ">=1.17.0"
+
+dependencies:
+  # https://pub.dev/packages/custom_lint
+  # we will use analyzer for inspecting Dart files
+  analyzer:
+  analyzer_plugin:
+  # custom_lint_builder will give us tools for writing lints
+  custom_lint_builder:

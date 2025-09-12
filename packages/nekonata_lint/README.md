@@ -1,0 +1,3 @@
+# nekonata_lint
+
+nekonata用のカスタムLintルールを提供するパッケージ

@@ -30,7 +30,7 @@ nekonataの、nekonataによる、nekonataのためのライブラリ
     cd packages
 
     # Dart, Flutterのみであれば、-t packageを指定
-    flutter create -t package --platforms=ios,android nekonata_<package name>
+    flutter create -t package nekonata_<package name>
 
     # Swift, Kotlinのコードが必要であれば、-t pluginを指定
     # プラットフォーム固有の処理を書くためのテンプレートが生成される
