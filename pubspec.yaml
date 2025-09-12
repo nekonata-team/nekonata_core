@@ -7,6 +7,7 @@ environment:
 workspace:
   - packages/nekonata_location_fetcher
   - packages/nekonata_map
+  - packages/nekonata_firestore
 
 dev_dependencies:
   very_good_analysis: ^9.0.0
