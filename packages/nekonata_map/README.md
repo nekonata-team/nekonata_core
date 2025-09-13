@@ -29,8 +29,7 @@ Just use `NekonataMap`
 Scaffold(
     appBar: AppBar(title: const Text('Nekonata Map')),
     body: NekonataMap(
-        latitude: 35.681236,
-        longitude: 139.767125,
+        latLng: LatLng(35.681236, 139.767125),
         onControllerCreated: (controller) => _controller = controller,
     ),
 )
