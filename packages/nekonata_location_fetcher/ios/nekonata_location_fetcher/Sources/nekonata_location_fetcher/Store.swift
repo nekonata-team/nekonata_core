@@ -1,3 +1,5 @@
+import Foundation
+
 /// プラットフォーム間のKeyとして扱っているので、変更する際は十分に注意すること
 /// 便宜上、UserDefaultsに保存する際のKeyと同名にしている
 struct Keys {
@@ -44,10 +46,10 @@ internal class Store {
 
     @UserDefault(key: Keys.mode, defaultValue: "hybrid")
     public static var mode: String
-    
+
     @UserDefault(key: Keys.useBackgroundActivitySessionManager, defaultValue: true)
     public static var useBackgroundActivitySessionManager: Bool
-    
+
     @UserDefault(key: Keys.hasLocationDidFinishLaunchingWithOptions, defaultValue: false)
     public static var hasLocationDidFinishLaunchingWithOptions: Bool
 

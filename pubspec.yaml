@@ -2,7 +2,7 @@ name: nekonata_core
 publish_to: "none"
 
 environment:
-  sdk: ^3.7.0
+  sdk: ^3.10.0
 
 workspace:
   - packages/nekonata_location_fetcher
@@ -12,4 +12,4 @@ workspace:
   - packages/nekonata_reporter
 
 dev_dependencies:
-  very_good_analysis: ^9.0.0
+  very_good_analysis: ^10.1.0

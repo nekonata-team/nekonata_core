@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.nekonata_location_fetcher_example"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

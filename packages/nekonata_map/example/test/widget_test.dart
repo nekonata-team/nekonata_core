@@ -5,11 +5,17 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nekonata_map/nekonata_map.dart';
 
 void main() {
   testWidgets('Verify Platform Views', (WidgetTester tester) async {
-    await tester.pumpWidget(NekonataMap());
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: NekonataMap(),
+      ),
+    );
   });
 }
