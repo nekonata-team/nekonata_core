@@ -5,10 +5,10 @@ version: 0.0.1
 resolution: workspace
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.12.0
 
 dependencies:
-  firebase_analytics: ^12.0.1
-  firebase_crashlytics: ^5.0.1
+  firebase_analytics: ^12.4.1
+  firebase_crashlytics: ^5.2.2
   flutter:
     sdk: flutter
